@@ -1,0 +1,37 @@
+{
+  "id": "009-los-lunes",
+  "idioma": "es",
+  "serie": "quien-invento",
+  "pilar": "contradicciones",
+  "tema": "el lunes",
+  "formato": "ambos-equivocados",
+  "escenario": "dormitorio",
+  "roles": {
+    "pregunta": "r",
+    "explica": "e"
+  },
+  "titulo": "¿Quién inventó los lunes?",
+  "cierre": {
+    "tipo": "hablado"
+  },
+  "aprendizaje": "El lunes no tiene nada de especial: lo que pesa es el cambio de ritmo después del descanso. Dormir bien el domingo ayuda más que quitar días.",
+  "hashtags": [
+    "#lunes",
+    "#semana",
+    "#humor"
+  ],
+  "lineas": [
+    {"r": "¿Quién inventó los lunes?", "tarjeta": {"icono": "lunes", "texto": "LUNES"}},
+    {"e": "Alguien que no tenía que ir a trabajar."},
+    {"r": "¿Y por qué no los quitaron?"},
+    {"e": "Porque entonces el martes sería el nuevo lunes.", "cara": "pensativo"},
+    {"r": "¿Y si quitamos también el martes?", "cara": "ilusionado", "emote": "bombilla"},
+    {"e": "Pues el miércoles sería el lunes."},
+    {"r": "¡Hasta que solo quede el fin de semana!", "cara": "feliz", "gesto": "salto"},
+    {"e": "Y entonces el sábado sería el lunes.", "cara": "serio"},
+    {"r": "¡No! El sábado es sábado.", "cara": "enfadado", "gesto": "niega"},
+    {"e": "Ya, pero los mayores encontrarían la manera de quejarse igual."},
+    {"pausa": 1.0, "reaccion": "silencio", "caras": {"r": "resignado", "e": "serio"}},
+    {"ambos": "Cosas de mayores."}
+  ]
+}

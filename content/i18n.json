@@ -1,0 +1,8 @@
+{
+  "_doc": "Textos fijos de la marca por idioma. Un idioma nuevo = una clave nueva en cada bloque (y sus guiones en content/guiones/<idioma>/, y sus voces en src/voice.mjs).",
+  "cierre": { "es": "Cosas de mayores." },
+  "handle": { "es": "@noentiendoalosmayores" },
+  "canal": { "es": "No Entiendo a los Mayores" },
+  "hashtags": { "es": ["#noentiendoalosmayores", "#cosasdemayores", "#humor", "#niños", "#vidaadulta"] },
+  "pie": { "es": "Dos niños intentando entender el mundo de los mayores. Nuevo vídeo cada día a las 13:30 y a las 20:30 (hora de España)." }
+}

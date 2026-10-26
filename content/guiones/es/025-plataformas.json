@@ -1,0 +1,37 @@
+{
+  "id": "025-plataformas",
+  "idioma": "es",
+  "serie": "por-que",
+  "pilar": "contradicciones",
+  "tema": "plataformas sin saber qué ver",
+  "formato": "situacion-cotidiana",
+  "escenario": "salon",
+  "roles": {
+    "pregunta": "r",
+    "explica": "e"
+  },
+  "titulo": "¿Por qué pagan cuatro plataformas y no ven nada?",
+  "cierre": {
+    "tipo": "hablado"
+  },
+  "aprendizaje": "Tener demasiadas opciones hace más difícil decidir (la «paradoja de la elección»): a veces menos plataformas significa disfrutar más.",
+  "hashtags": [
+    "#series",
+    "#streaming",
+    "#humor"
+  ],
+  "lineas": [
+    {"r": "¿Por qué mis padres pagan cuatro plataformas de series?", "tarjeta": {"icono": "tele", "texto": "4 PLATAFORMAS"}},
+    {"e": "Para tener muchas cosas que ver."},
+    {"r": "¿Y qué ven?"},
+    {"e": "Nada. Se pasan una hora eligiendo.", "cara": "serio", "tarjeta": {"icono": "reloj", "texto": "1 HORA"}},
+    {"r": "¿Y al final?", "cara": "curioso"},
+    {"e": "Ponen una que ya han visto cinco veces.", "gesto": "asiente"},
+    {"r": "¿Y para eso pagan cuatro?", "cara": "dudoso"},
+    {"e": "Para estar seguros de que no hay nada."},
+    {"r": "Mi abuela tenía dos canales y siempre veía algo.", "cara": "pensativo"},
+    {"e": "Porque no tenía que elegir. Elegir cansa mucho."},
+    {"pausa": 1.0, "reaccion": "silencio", "caras": {"r": "confundido"}},
+    {"ambos": "Cosas de mayores."}
+  ]
+}

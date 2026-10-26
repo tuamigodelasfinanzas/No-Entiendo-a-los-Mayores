@@ -1,0 +1,37 @@
+{
+  "id": "019-jubilacion",
+  "idioma": "es",
+  "serie": "cuando-sea-mayor",
+  "pilar": "trabajo",
+  "tema": "jubilación",
+  "formato": "deduccion-logica",
+  "escenario": "parque",
+  "roles": {
+    "pregunta": "e",
+    "explica": "r"
+  },
+  "titulo": "Cuando sea mayor quiero estar jubilado",
+  "cierre": {
+    "tipo": "hablado"
+  },
+  "aprendizaje": "La jubilación es dejar de trabajar por edad y cobrar una pensión; en España la edad ordinaria ronda los 65-67 años según lo cotizado.",
+  "hashtags": [
+    "#jubilacion",
+    "#trabajo",
+    "#pensiones"
+  ],
+  "lineas": [
+    {"e": "Cuando sea mayor quiero estar jubilado.", "cara": "ilusionado"},
+    {"r": "Antes tienes que trabajar unos cuarenta años.", "cara": "serio", "tarjeta": {"icono": "calendario", "texto": "40 AÑOS"}},
+    {"e": "¿Cuarenta? ¿Y qué haces cuando te jubilas?", "cara": "sorprendido"},
+    {"r": "Nada. Descansar, pasear, ir al parque.", "cara": "sonrisa"},
+    {"e": "¡Eso es lo que hacemos ahora!", "cara": "asombrado", "gesto": "salto", "emote": "!"},
+    {"r": "Ya, pero ellos se lo han ganado.", "cara": "convencido"},
+    {"e": "O sea, que trabajas cuarenta años para volver a ser niño.", "cara": "pensativo"},
+    {"r": "Pero con dolor de espalda.", "gesto": "asiente"},
+    {"e": "Pues yo me quedo como estoy.", "cara": "convencido", "gesto": "acerca"},
+    {"r": "No se puede. Hay que pasar por el medio.", "cara": "resignado"},
+    {"pausa": 1.0, "reaccion": "silencio"},
+    {"ambos": "Cosas de mayores."}
+  ]
+}

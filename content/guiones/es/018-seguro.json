@@ -1,0 +1,42 @@
+{
+  "id": "018-seguro",
+  "idioma": "es",
+  "serie": "diccionario",
+  "pilar": "dinero",
+  "tema": "seguro",
+  "formato": "definicion-absurda",
+  "escenario": "salon",
+  "roles": {
+    "pregunta": "r",
+    "explica": "e"
+  },
+  "titulo": "¿Qué es un seguro?",
+  "cierre": {
+    "tipo": "reaccion",
+    "caras": {
+      "r": "dudoso",
+      "e": "serio"
+    }
+  },
+  "aprendizaje": "Un seguro reparte el riesgo: muchas personas pagan una cuota para cubrir los daños de las pocas a las que les pasa algo. Conviene leer qué cubre y qué no.",
+  "hashtags": [
+    "#seguros",
+    "#letrapequeña",
+    "#finanzaspersonales"
+  ],
+  "lineas": [
+    {"r": "¿Qué es un seguro?", "tarjeta": {"icono": "escudo", "texto": "SEGURO"}},
+    {"e": "Pagas todos los meses por si te pasa algo malo."},
+    {"r": "¿Y si no te pasa nada?"},
+    {"e": "Pues has pagado para nada.", "gesto": "asiente"},
+    {"r": "¿Y si te pasa algo?"},
+    {"e": "Entonces lees la letra pequeña.", "cara": "serio", "tarjeta": {"icono": "factura", "texto": "LETRA PEQUEÑA"}},
+    {"r": "¿Y qué pone?", "cara": "curioso"},
+    {"e": "Que eso justo no lo cubre."},
+    {"r": "Entonces, ¿quieres que te pase algo o no?", "cara": "confundido", "emote": "??"},
+    {"e": "Quieres que no. Pero, si pasa, que esté cubierto.", "cara": "pensativo"},
+    {"r": "¿Y suele estarlo?"},
+    {"e": "Depende de quién lea la letra pequeña.", "cara": "picaro"},
+    {"pausa": 1.3, "reaccion": "mirada", "caras": {"r": "dudoso", "e": "serio"}}
+  ]
+}

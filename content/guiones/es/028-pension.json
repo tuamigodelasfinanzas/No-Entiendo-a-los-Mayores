@@ -1,0 +1,40 @@
+{
+  "id": "028-pension",
+  "idioma": "es",
+  "serie": "ocho-anos",
+  "pilar": "dinero",
+  "tema": "pensión",
+  "formato": "deduccion-logica",
+  "escenario": "parque",
+  "roles": {
+    "pregunta": "r",
+    "explica": "e"
+  },
+  "titulo": "La pensión, explicada como si tuvieras ocho años",
+  "cierre": {
+    "tipo": "texto",
+    "caras": {
+      "r": "dudoso",
+      "e": "serio"
+    }
+  },
+  "aprendizaje": "En España, las pensiones públicas funcionan sobre todo por reparto: las cotizaciones de quienes trabajan hoy pagan las pensiones de hoy.",
+  "hashtags": [
+    "#pensiones",
+    "#jubilacion",
+    "#economia"
+  ],
+  "lineas": [
+    {"r": "¿Qué es una pensión? Como si tuviera ocho años."},
+    {"e": "Cuando eres muy mayor y ya no trabajas, te pagan los que trabajan ahora.", "tarjeta": {"icono": "hucha", "texto": "PENSIÓN"}},
+    {"r": "¿Y a ellos quién les pagará?", "cara": "dudoso"},
+    {"e": "Los que trabajen después.", "gesto": "asiente"},
+    {"r": "¿O sea, nosotros?", "cara": "sorprendido", "emote": "!"},
+    {"e": "Exacto. Tú le pagas a tu abuelo."},
+    {"r": "Pues mi abuelo me da la paga a mí.", "cara": "pensativo"},
+    {"e": "Entonces os estáis pasando el dinero en círculo.", "cara": "confundido", "emote": "lio"},
+    {"r": "¿Y quién se queda lo que se cae por el camino?"},
+    {"e": "Eso pregúntaselo a un mayor.", "cara": "serio"},
+    {"pausa": 1.3, "reaccion": "mirada", "caras": {"r": "dudoso", "e": "serio"}}
+  ]
+}

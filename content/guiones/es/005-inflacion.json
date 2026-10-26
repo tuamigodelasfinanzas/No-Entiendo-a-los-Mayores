@@ -1,0 +1,37 @@
+{
+  "id": "005-inflacion",
+  "idioma": "es",
+  "serie": "ocho-anos",
+  "pilar": "dinero",
+  "tema": "inflación",
+  "formato": "comparacion",
+  "escenario": "cocina",
+  "roles": {
+    "pregunta": "r",
+    "explica": "e"
+  },
+  "titulo": "La inflación, explicada como si tuvieras ocho años",
+  "cierre": {
+    "tipo": "hablado"
+  },
+  "aprendizaje": "La inflación es la subida general de los precios: con el mismo dinero puedes comprar menos cosas que antes.",
+  "hashtags": [
+    "#inflacion",
+    "#precios",
+    "#economia"
+  ],
+  "lineas": [
+    {"r": "Explícame la inflación como si tuviera ocho años."},
+    {"e": "Tienes ocho años.", "cara": "serio"},
+    {"r": "Pues por eso.", "cara": "dudoso"},
+    {"e": "Vale. Antes, con un euro comprabas diez caramelos. Ahora, siete.", "tarjeta": {"icono": "moneda", "texto": "1 € = 7"}},
+    {"r": "¿Y dónde están los otros tres?", "cara": "dudoso", "emote": "?"},
+    {"e": "No están. El euro se ha encogido."},
+    {"r": "Pero sigue siendo un euro.", "cara": "confundido"},
+    {"e": "Por fuera sí. Por dentro vale menos.", "cara": "pensativo"},
+    {"r": "¿Y los sueldos también suben?", "cara": "curioso"},
+    {"e": "Sí. Pero los precios suben en ascensor y los sueldos, por la escalera.", "gesto": "encoge"},
+    {"pausa": 1.0, "reaccion": "silencio", "caras": {"r": "resignado"}},
+    {"ambos": "Cosas de mayores."}
+  ]
+}

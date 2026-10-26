@@ -1,0 +1,38 @@
+{
+  "id": "027-actualizaciones",
+  "idioma": "es",
+  "serie": "manual",
+  "pilar": "tecnologia",
+  "tema": "actualizaciones obligatorias",
+  "formato": "instrucciones",
+  "escenario": "dormitorio",
+  "roles": {
+    "pregunta": "r",
+    "explica": "e"
+  },
+  "titulo": "Manual para ser adulto: las actualizaciones",
+  "cierre": {
+    "tipo": "hablado"
+  },
+  "aprendizaje": "Las actualizaciones corrigen fallos de seguridad; conviene instalarlas, aunque a veces cambien cosas de sitio.",
+  "hashtags": [
+    "#actualizaciones",
+    "#movil",
+    "#tecnologia"
+  ],
+  "lineas": [
+    {"e": "Manual para ser adulto. Lección cuatro: las actualizaciones.", "tarjeta": {"icono": "movil", "texto": "ACTUALIZAR"}},
+    {"r": "¿Qué hay que hacer?"},
+    {"e": "Cuando el móvil diga «actualizar ahora», pulsas «más tarde»."},
+    {"r": "¿Cuánto más tarde?"},
+    {"e": "Tres semanas. Todos los días.", "gesto": "asiente"},
+    {"r": "¿Y luego?", "cara": "curioso"},
+    {"e": "Se actualiza solo a las tres de la mañana.", "cara": "serio", "tarjeta": {"icono": "despertador", "texto": "3:00"}},
+    {"r": "¿Y qué cambia?"},
+    {"e": "Los botones. Ahora están en otro sitio."},
+    {"r": "¿Y eso lo mejora?", "cara": "dudoso"},
+    {"e": "Sí. Ahora tardas más en encontrarlos.", "cara": "convencido"},
+    {"pausa": 1.0, "reaccion": "parpadeo", "caras": {"r": "confundido"}},
+    {"r": "Cosas de mayores.", "cara": "resignado"}
+  ]
+}

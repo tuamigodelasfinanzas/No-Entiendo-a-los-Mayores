@@ -1,0 +1,41 @@
+{
+  "id": "022-parking",
+  "idioma": "es",
+  "serie": "quien-invento",
+  "pilar": "vida-adulta",
+  "tema": "parking de pago",
+  "formato": "mini-historia",
+  "escenario": "calle",
+  "roles": {
+    "pregunta": "r",
+    "explica": "e"
+  },
+  "titulo": "¿Quién inventó los parkings de pago?",
+  "cierre": {
+    "tipo": "reaccion",
+    "caras": {
+      "e": "serio",
+      "r": "convencido"
+    }
+  },
+  "aprendizaje": "El aparcamiento de pago existe porque el espacio en la ciudad es escaso; para recados cerca de casa, ir andando suele ser más barato y más rápido.",
+  "hashtags": [
+    "#parking",
+    "#coche",
+    "#ciudad"
+  ],
+  "lineas": [
+    {"r": "¿Quién inventó los parkings de pago?", "tarjeta": {"icono": "ticket", "texto": "PARKING"}},
+    {"e": "Alguien que vio un coche quieto y pensó: aquí hay negocio."},
+    {"r": "¿Te cobran por no moverte?", "cara": "dudoso"},
+    {"e": "Por minutos. Como un taxi, pero parado.", "gesto": "asiente"},
+    {"r": "¿Y si vas a comprar el pan?"},
+    {"e": "Das tres vueltas, no encuentras sitio y entras al parking."},
+    {"r": "¿Cuánto cuesta el pan?"},
+    {"e": "Un euro.", "tarjeta": {"icono": "moneda", "texto": "PAN: 1 €"}},
+    {"r": "¿Y el parking?"},
+    {"e": "Tres euros.", "cara": "serio", "tarjeta": {"icono": "ticket", "texto": "PARKING: 3 €"}},
+    {"r": "Entonces el pan más caro es el que vas a buscar en coche.", "cara": "pensativo", "emote": "bombilla"},
+    {"pausa": 1.3, "reaccion": "mirada", "caras": {"e": "serio", "r": "convencido"}}
+  ]
+}

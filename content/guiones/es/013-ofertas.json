@@ -1,0 +1,37 @@
+{
+  "id": "013-ofertas",
+  "idioma": "es",
+  "serie": "por-que",
+  "pilar": "dinero",
+  "tema": "ofertas y descuentos",
+  "formato": "deduccion-logica",
+  "escenario": "cocina",
+  "roles": {
+    "pregunta": "e",
+    "explica": "r"
+  },
+  "titulo": "¿Por qué compran cosas que no necesitan?",
+  "cierre": {
+    "tipo": "hablado"
+  },
+  "aprendizaje": "Una oferta solo es ahorro si ibas a comprar esa cosa de todas formas; si no la necesitas, gastas menos de lo normal, pero gastas.",
+  "hashtags": [
+    "#ofertas",
+    "#ahorro",
+    "#compras"
+  ],
+  "lineas": [
+    {"e": "¿Por qué los mayores compran cosas que no necesitan?", "cara": "curioso"},
+    {"r": "Porque estaban de oferta.", "cara": "convencido", "tarjeta": {"icono": "oferta"}},
+    {"e": "¿Y eso es ahorrar?", "cara": "dudoso"},
+    {"r": "Claro. Si cuesta diez y lo pagas a cinco, ahorras cinco.", "gesto": "asiente"},
+    {"e": "Pero si no lo compras, ahorras diez.", "cara": "ilusionado", "emote": "bombilla"},
+    {"r": "Eso no es una oferta.", "cara": "serio"},
+    {"e": "Mi madre compró tres paraguas por el precio de dos."},
+    {"r": "Entonces se ahorró un paraguas.", "cara": "sonrisa"},
+    {"e": "¡Pero si aquí casi nunca llueve!", "cara": "sorprendido"},
+    {"r": "Pues se ahorró tres.", "cara": "pensativo"},
+    {"pausa": 1.0, "reaccion": "silencio", "caras": {"e": "confundido", "r": "pensativo"}},
+    {"e": "Cosas de mayores.", "cara": "resignado"}
+  ]
+}

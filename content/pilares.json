@@ -1,0 +1,27 @@
+{
+  "_doc": "Taxonomía editorial ampliable (docs/guia-editorial.md §4). Cada guion lleva un 'pilar' y un 'tema'. Los temas listados son la reserva para futuros guiones; un tema solo puede usarse en un guion (lo comprueba tools/validate.mjs). Para ampliar: añade temas o un pilar nuevo con su lista.",
+  "dinero": {
+    "nombre": { "es": "Dinero y finanzas" },
+    "temas": ["hipoteca", "tarjeta de crédito", "préstamo", "intereses", "inflación", "banco", "ahorro", "inversión", "seguro", "pensión", "impuestos", "IRPF", "comisión", "salario bruto y neto", "compras financiadas", "números rojos", "descubierto", "alquiler", "ofertas y descuentos", "Bizum", "renting", "suscripción", "financiación"]
+  },
+  "trabajo": {
+    "nombre": { "es": "Trabajo" },
+    "temas": ["reuniones", "entrevista de trabajo", "currículum", "experiencia laboral", "teletrabajo", "jefes", "ascensos", "horas extra", "vacaciones", "fichar", "productividad", "networking", "jubilación", "primer empleo", "lunes y viernes"]
+  },
+  "vida-adulta": {
+    "nombre": { "es": "Vida adulta" },
+    "temas": ["comprar una vivienda", "comunidad de vecinos", "facturas", "electricidad", "agua", "Internet", "coche", "ITV", "multas", "parking de pago", "supermercado", "reformas", "mudanzas", "citas administrativas"]
+  },
+  "relaciones": {
+    "nombre": { "es": "Relaciones y comunicación" },
+    "temas": ["tenemos que quedar", "grupos de WhatsApp", "mensajes sin responder", "bodas", "aniversarios", "convivencia", "tenemos que hablar", "aplicaciones de citas", "ghosting"]
+  },
+  "tecnologia": {
+    "nombre": { "es": "Tecnología" },
+    "temas": ["algoritmos", "cookies", "contraseñas", "la nube", "inteligencia artificial", "actualizaciones obligatorias", "suscripciones digitales", "redes sociales", "likes", "influencers", "privacidad", "móviles caros", "aplicaciones gratuitas", "publicidad personalizada"]
+  },
+  "contradicciones": {
+    "nombre": { "es": "Contradicciones cotidianas" },
+    "temas": ["café porque estás cansado", "trabajar para pagar lo que no usas", "conducir al gimnasio", "pagar un gimnasio y no ir", "fotos que nunca miras", "comprar para ahorrar", "plataformas sin saber qué ver", "no tengo tiempo y el móvil", "despertador", "el lunes", "vacaciones para descansar del trabajo"]
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "_doc": "Series recurrentes (docs/guia-editorial.md §3). 'etiqueta' es el distintivo que aparece sobre la pregunta del gancho; 'color' su fondo. Para añadir una serie: un bloque más aquí y guiones con \"serie\": \"<id>\".",
+  "por-que": { "nombre": { "es": "¿Por qué los mayores...?" }, "etiqueta": { "es": "¿POR QUÉ LOS MAYORES...?" }, "color": "#FFC93C" },
+  "diccionario": { "nombre": { "es": "Diccionario de mayores" }, "etiqueta": { "es": "DICCIONARIO DE MAYORES" }, "color": "#9ED27A" },
+  "cuando-sea-mayor": { "nombre": { "es": "Cuando sea mayor..." }, "etiqueta": { "es": "CUANDO SEA MAYOR..." }, "color": "#BFA8F0" },
+  "quien-invento": { "nombre": { "es": "¿Quién inventó esto?" }, "etiqueta": { "es": "¿QUIÉN INVENTÓ ESTO?" }, "color": "#FF9E80" },
+  "ocho-anos": { "nombre": { "es": "Explícamelo como si tuviera ocho años" }, "etiqueta": { "es": "EXPLÍCAMELO COMO SI TUVIERA 8 AÑOS" }, "color": "#7FC4FF" },
+  "manual": { "nombre": { "es": "Manual para ser adulto" }, "etiqueta": { "es": "MANUAL PARA SER ADULTO" }, "color": "#FFB7C5" }
+}

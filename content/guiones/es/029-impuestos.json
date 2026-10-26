@@ -1,0 +1,39 @@
+{
+  "id": "029-impuestos",
+  "idioma": "es",
+  "serie": "quien-invento",
+  "pilar": "dinero",
+  "tema": "impuestos",
+  "formato": "nadie-sabe",
+  "escenario": "cole",
+  "roles": {
+    "pregunta": "r",
+    "explica": "e"
+  },
+  "titulo": "¿Quién inventó los impuestos?",
+  "cierre": {
+    "tipo": "hablado"
+  },
+  "aprendizaje": "Los impuestos pagan servicios comunes como colegios, sanidad o carreteras. Son complicados, por eso existen gestores y asesores fiscales.",
+  "hashtags": [
+    "#impuestos",
+    "#hacienda",
+    "#economia"
+  ],
+  "lineas": [
+    {"r": "¿Quién inventó los impuestos?", "tarjeta": {"icono": "factura", "texto": "IMPUESTOS"}},
+    {"e": "Alguien que necesitaba dinero para hacer carreteras y colegios."},
+    {"r": "Eso está bien.", "cara": "sonrisa"},
+    {"e": "Sí. Por eso todos pagamos un poquito.", "gesto": "asiente"},
+    {"r": "¿Y cuánto es un poquito?"},
+    {"e": "Eso no lo sabe nadie.", "cara": "serio"},
+    {"r": "¿Ni los mayores?", "cara": "sorprendido"},
+    {"e": "Mi padre paga a un señor para que se lo explique."},
+    {"r": "¿Y el señor lo sabe?", "cara": "dudoso"},
+    {"e": "El señor cobra por intentarlo."},
+    {"r": "¿Y luego pagan impuestos por lo que cobra el señor?", "cara": "asombrado", "emote": "??"},
+    {"e": "Creo que sí.", "cara": "confundido"},
+    {"pausa": 1.0, "reaccion": "silencio"},
+    {"ambos": "Cosas de mayores."}
+  ]
+}

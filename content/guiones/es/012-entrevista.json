@@ -1,0 +1,41 @@
+{
+  "id": "012-entrevista",
+  "idioma": "es",
+  "serie": "manual",
+  "pilar": "trabajo",
+  "tema": "entrevista de trabajo",
+  "formato": "instrucciones",
+  "escenario": "cole",
+  "roles": {
+    "pregunta": "r",
+    "explica": "e"
+  },
+  "titulo": "Manual para ser adulto: la entrevista de trabajo",
+  "cierre": {
+    "tipo": "texto",
+    "caras": {
+      "r": "confundido",
+      "e": "serio"
+    }
+  },
+  "aprendizaje": "En una entrevista ayuda ser sincero y concreto: contar un defecto real y qué haces para mejorarlo suele funcionar mejor que una frase hecha.",
+  "hashtags": [
+    "#empleo",
+    "#entrevistadetrabajo",
+    "#trabajo"
+  ],
+  "lineas": [
+    {"e": "Manual para ser adulto. Lección dos: la entrevista de trabajo.", "tarjeta": {"icono": "maletin", "texto": "ENTREVISTA"}},
+    {"r": "¿Qué te preguntan?"},
+    {"e": "¿Cuál es tu mayor defecto?", "cara": "serio"},
+    {"r": "Fácil. Que me muerdo las uñas.", "cara": "sonrisa"},
+    {"e": "¡No! Tienes que decir: soy demasiado perfeccionista.", "gesto": "niega"},
+    {"r": "Pero eso es mentira.", "cara": "dudoso"},
+    {"e": "Es una mentira que gusta mucho.", "cara": "picaro"},
+    {"r": "¿Y si me preguntan por qué quiero trabajar allí?"},
+    {"e": "Nunca digas que es por el dinero.", "cara": "serio"},
+    {"r": "¿Y por qué es, entonces?", "cara": "curioso"},
+    {"e": "Por el dinero. Pero se dice: por los retos.", "gesto": "asiente"},
+    {"pausa": 1.3, "reaccion": "parpadeo", "caras": {"r": "confundido", "e": "serio"}}
+  ]
+}

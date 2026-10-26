@@ -1,0 +1,40 @@
+{
+  "id": "026-mi-coche",
+  "idioma": "es",
+  "serie": "cuando-sea-mayor",
+  "pilar": "vida-adulta",
+  "tema": "coche",
+  "formato": "situacion-cotidiana",
+  "escenario": "calle",
+  "roles": {
+    "pregunta": "e",
+    "explica": "r"
+  },
+  "titulo": "Cuando sea mayor tendré un coche superrápido",
+  "cierre": {
+    "tipo": "reaccion",
+    "caras": {
+      "e": "serio",
+      "r": "asombrado"
+    }
+  },
+  "aprendizaje": "Un coche cuesta mucho más que su precio: combustible, seguro, impuestos, revisiones, aparcamiento y reparaciones suman cada año.",
+  "hashtags": [
+    "#coche",
+    "#gastos",
+    "#vidaadulta"
+  ],
+  "lineas": [
+    {"r": "Cuando sea mayor tendré un coche rojo superrápido.", "cara": "ilusionado", "tarjeta": {"icono": "coche", "texto": "MI COCHE"}},
+    {"e": "¿Y dónde lo vas a aparcar?", "cara": "dudoso"},
+    {"r": "En la puerta de casa.", "cara": "convencido"},
+    {"e": "Ahí nunca hay sitio. Darás vueltas media hora.", "cara": "serio"},
+    {"r": "Pues lo uso para viajar."},
+    {"e": "Primero la gasolina. Luego el seguro, las revisiones, las ruedas...", "tarjeta": {"icono": "factura", "texto": "€€€"}},
+    {"r": "¿Y lo uso mucho?", "cara": "curioso"},
+    {"e": "Para ir a trabajar. Y así puedes pagar el coche."},
+    {"r": "¿Trabajo para pagar el coche que uso para ir a trabajar?", "cara": "confundido", "emote": "lio"},
+    {"e": "Exacto. Y el fin de semana, a lavarlo.", "gesto": "asiente"},
+    {"pausa": 1.3, "reaccion": "mirada", "caras": {"e": "serio", "r": "asombrado"}}
+  ]
+}
