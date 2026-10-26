@@ -2,7 +2,7 @@
   "_doc": "Ficha técnica de los personajes (la biblia completa está en docs/biblia-personajes.md). El director (src/director.mjs) lee de aquí nombres, colores, posición en pantalla y caras por defecto; las voces están en src/voice.mjs.",
   "e": {
     "nombre": {
-      "es": "Edu"
+      "es": "E"
     },
     "letra": "E",
     "color": "#D7322E",
@@ -17,7 +17,7 @@
   },
   "r": {
     "nombre": {
-      "es": "Rubén"
+      "es": "R"
     },
     "letra": "R",
     "color": "#1F6FE0",

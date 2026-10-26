@@ -6,7 +6,7 @@ Los diseños son los de las hojas de Chiño (`assets/characters/source/`). `tool
 
 ## 1. Los dos
 
-| | **Edu** (E) | **Rubén** (R) |
+| | **E** | **R** |
 |---|---|---|
 | Papel habitual | Personaje B: cree entender el mundo adulto y lo explica con seguridad | Personaje A: lógica literal, pregunta corto, no acepta contradicciones |
 | Carácter (hoja) | Curioso, divertido, impulsivo, creativo, "siempre tiene una idea" | Tranquilo, reflexivo, responsable, aventurero, "siempre cuida de E" |
@@ -19,9 +19,9 @@ Los diseños son los de las hojas de Chiño (`assets/characters/source/`). `tool
 | Cara al escuchar | `sonrisa` | `neutral` |
 | Frase tipo | "Fácil. Lo pagas con la tarjeta." | "¿Y quién paga la tarjeta?" |
 
-Edu **no** es el listo ni Rubén el tonto (ni al revés). Edu sabe la mitad de las cosas y las cuenta enteras; Rubén no sabe nada y por eso pregunta lo que importa. A veces Edu acierta y es Rubén quien se lía.
+E **no** es el listo ni R el tonto (ni al revés). E sabe la mitad de las cosas y las cuenta enteras; R no sabe nada y por eso pregunta lo que importa. A veces E acierta y es R quien se lía.
 
-**Intercambio de papeles.** En uno de cada cinco o seis episodios Edu pregunta y Rubén explica (en los 30 primeros: 002, 008, 013, 019, 026). El validador avisa si baja del 15 %. Cada guion declara `"roles": { "pregunta": "e"|"r" }`.
+**Intercambio de papeles.** En uno de cada cinco o seis episodios E pregunta y R explica (en los 30 primeros: 002, 008, 013, 019, 026). El validador avisa si baja del 15 %. Cada guion declara `"roles": { "pregunta": "e"|"r" }`.
 
 **Originalidad.** La identidad visual es propia. Las zapatillas de R llevaban en la hoja un logotipo parecido al de una marca deportiva: `prepare_characters.py` lo borra (las zapatillas quedan lisas) y no se debe volver a dibujar ningún logotipo de marca, en la ropa ni en los decorados.
 
@@ -29,11 +29,12 @@ Edu **no** es el listo ni Rubén el tonto (ni al revés). Edu sabe la mitad de l
 
 ## 2. Reglas de diálogo
 
-- **Frases cortas.** Máximo 90 caracteres por línea; lo normal son 3 a 9 palabras. Rubén suele hablar menos que Edu.
+- **Frases cortas.** Máximo 90 caracteres por línea; lo normal son 3 a 9 palabras. R suele hablar menos que E.
+- **Sin nombrarse.** Se llaman E y R, pero no se llaman por su nombre en el diálogo: una letra suelta no se entiende en voz alta. El nombre se ve en la etiqueta del bocadillo.
 - **Una línea, una voz.** Si los dos dicen algo a la vez, es una línea `"ambos"` (casi siempre el cierre).
 - **Turnos.** Pregunta → respuesta segura → pregunta que desmonta → respuesta que empeora... Un personaje puede encadenar dos líneas si la segunda es el giro.
-- **Rubén desmonta con una sola pregunta.** "¿Y quién paga la tarjeta?" vale más que una explicación.
-- **Edu responde seguro, aunque no sepa.** "Fácil.", "Claro.", "Exacto." son sus muletillas; cuando se da cuenta de que no lo sabe, lo reconoce: "Eso no lo sabe nadie."
+- **R desmonta con una sola pregunta.** "¿Y quién paga la tarjeta?" vale más que una explicación.
+- **E responde seguro, aunque no sepa.** "Fácil.", "Claro.", "Exacto." son sus muletillas; cuando se da cuenta de que no lo sabe, lo reconoce: "Eso no lo sabe nadie."
 - **Nada de chistes contados.** El humor sale de la lógica literal, de las contradicciones, de las conclusiones absurdas y de las reacciones.
 - **Español de España claro**, sin localismos que no se entiendan en otros países (nada de "guay", "mola", "coger", "chuches"... la lista está en `tools/validate.mjs`).
 
@@ -61,4 +62,4 @@ Una pausa es un gesto, no relleno: máximo 2 s cada una y 3,5 s por episodio.
 
 ## 5. Voces y otros idiomas
 
-Las voces viven en `src/voice.mjs` por idioma (`VOICES.es.e`, `VOICES.es.r`). Para añadir un idioma: voces en ese bloque, nombres en `content/personajes.json` (`"nombre": { "es": "Edu", "en": "..." }`), textos de marca en `content/i18n.json`, etiquetas de serie en `content/series.json` y los guiones en `content/guiones/<idioma>/`. El motor no tiene ningún texto escrito a fuego.
+Las voces viven en `src/voice.mjs` por idioma (`VOICES.es.e`, `VOICES.es.r`). Para añadir un idioma: voces en ese bloque, nombres en `content/personajes.json` (`"nombre": { "es": "E", "en": "..." }`), textos de marca en `content/i18n.json`, etiquetas de serie en `content/series.json` y los guiones en `content/guiones/<idioma>/`. El motor no tiene ningún texto escrito a fuego.

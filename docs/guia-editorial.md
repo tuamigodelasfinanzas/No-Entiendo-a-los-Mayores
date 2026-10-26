@@ -2,9 +2,9 @@
 
 ## 1. La idea
 
-Dos niños, Edu y Rubén ([biblia](biblia-personajes.md)), intentan comprender conceptos, costumbres y contradicciones del mundo adulto. Cada Short desarrolla **una sola idea** y combina seis cosas: curiosidad, contradicción, humor, un pequeño aprendizaje, que el adulto que lo ve se reconozca, y un remate memorable.
+Dos niños, E y R ([biblia](biblia-personajes.md)), intentan comprender conceptos, costumbres y contradicciones del mundo adulto. Cada Short desarrolla **una sola idea** y combina seis cosas: curiosidad, contradicción, humor, un pequeño aprendizaje, que el adulto que lo ve se reconozca, y un remate memorable.
 
-El cierre de marca es **"Cosas de mayores."**: hablado (por uno o por los dos, con variaciones: "Cosas de mayores, Rubén."), escrito (sello tras la última reacción) o como reacción final (miran a cámara y cae el sello). El sello aparece siempre; lo que varía es cómo se llega a él.
+El cierre de marca es **"Cosas de mayores."**: hablado (por uno o por los dos, con variaciones: "Son cosas de mayores."), escrito (sello tras la última reacción) o como reacción final (miran a cámara y cae el sello). El sello aparece siempre; lo que varía es cómo se llega a él.
 
 ## 2. Estructura (orientativa, no una plantilla)
 

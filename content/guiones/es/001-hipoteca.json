@@ -21,7 +21,7 @@
     "#vivienda"
   ],
   "lineas": [
-    {"r": "Edu, ¿qué es una hipoteca?"},
+    {"r": "¿Qué es una hipoteca?"},
     {"e": "Fácil. El banco te deja dinero para comprar una casa.", "tarjeta": {"icono": "casa", "texto": "HIPOTECA"}},
     {"e": "Y luego se lo devuelves. Durante treinta años.", "gesto": "asiente", "tarjeta": {"icono": "calendario", "texto": "30 AÑOS"}},
     {"r": "¿Treinta años? ¡Si mi padre tiene cuarenta!", "cara": "sorprendido", "emote": "!"},
