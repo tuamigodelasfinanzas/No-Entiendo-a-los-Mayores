@@ -40,6 +40,33 @@ const GESTURES = {
   encoge: (at) => [{ ...at, squash: 1, headY: 0 }, { ...tplus(at, 0.18), squash: 0.95, headY: 10, headR: -4, e: 'out' }, { ...tplus(at, 0.7), squash: 1, headY: 0, headR: 0 }],
   bota: (at, b) => [{ ...at, y: b.y }, { ...tplus(at, 0.12), y: b.y - 30, e: 'out' }, { ...tplus(at, 0.24), y: b.y, e: 'in' }, { ...tplus(at, 0.36), y: b.y - 26, e: 'out' }, { ...tplus(at, 0.48), y: b.y, e: 'in' }],
 };
+// Chiño's poses (assets/characters/<id>/poses, tools/prepare_poses.py): what the body does while a kid speaks or
+// listens. A line can name one ("pose" for the speaker, "pose_otro" for the listener); otherwise the director picks
+// from what the line is (its face, a question, an exclamation, an explanation). Only calm, standing poses here:
+// jumping, running, sitting, the ball... are for scripts that ask for them.
+const POSES = {
+  e: {
+    sorpresa: ['encoge', 'idea'], duda: ['rasca', 'encoge'], piensa: ['rasca', 'idea'], feliz: ['pulgar-arriba', 'corazon'],
+    pregunta: ['encoge', 'explica'], exclama: ['senala', 'idea'], explica: ['explica', 'senala', 'idea', 'pulgar-arriba'],
+    secreto: ['susurra'], escucha: ['manos-cadera', 'brazos-cruzados', null], cierre: ['encoge'],
+  },
+  r: {
+    sorpresa: ['mano-frente', 'palmas-arriba'], duda: ['mano-barbilla', 'palmas-arriba'], piensa: ['mano-barbilla'], feliz: ['senala-arriba', 'levanta-mano'],
+    pregunta: ['palmas-arriba', 'levanta-mano', 'mano-barbilla'], exclama: ['senala-a-e', 'mano-frente'], explica: ['senala-a-e', 'senala-arriba', 'palmas-arriba'],
+    secreto: ['mano-barbilla'], escucha: ['brazos-cruzados', 'mano-barbilla', null], cierre: ['palmas-arriba'],
+  },
+};
+const FACE_KIND = { sorprendido: 'sorpresa', asustado: 'sorpresa', dudoso: 'duda', confundido: 'duda', pensativo: 'piensa', feliz: 'feliz', orgulloso: 'feliz', sonrisa: 'feliz' };
+function lineKind(it, text) {
+  if (it.cara && FACE_KIND[it.cara]) return FACE_KIND[it.cara];
+  if (it.emote === '!') return 'sorpresa';
+  if (/\?\s*$/.test(text)) return 'pregunta';
+  if (/!\s*$/.test(text)) return 'exclama';
+  return 'explica';
+}
+// a small stable hash, so the same script always gets the same poses
+const hash = str => [...str].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
+
 const tplus = (at, d) => ({ ...at, t: (at.t ?? 0) + d });
 const SFX_GESTURE = { salto: 'boing', bota: 'boing', aparta: 'swipe', encoge: 'tick' };
 
@@ -47,7 +74,7 @@ export function build(script, o = {}) {
   const lang = script.idioma || o.lang || 'es';
   const tr = v => (v && typeof v === 'object' ? v[lang] ?? v.es : v);
   const Y = CHARS.suelo, S = CHARS.escala;
-  const base = w => ({ who: w, x: CHARS[w].x, y: Y, s: S, face: CHARS[w].cara_escucha, look: CHARS[w].mira_al_otro, headR: 0, headY: 0, lean: 0, squash: 1, emoteK: 0, lid: 0 });
+  const base = w => ({ who: w, x: CHARS[w].x, y: Y, s: S, face: CHARS[w].cara_escucha, look: CHARS[w].mira_al_otro, headR: 0, headY: 0, lean: 0, squash: 1, emoteK: 0, lid: 0, pose: null, pose0: null, poseK: 1 });
   const keys = { e: [base('e')], r: [base('r')] };
   const cam = [{ t: 0, ...shot('dos'), e: 'step' }];
   const lines = [], cards = [], sfx = [];
@@ -69,6 +96,7 @@ export function build(script, o = {}) {
   // shot plan: the hook in two-shot; then the speaker in medium shot, a close-up for short punch lines,
   // and back to the two-shot for reactions and the ending
   let prevShot = 'dos';
+  const poseNow = { e: null, r: null };
   speech.forEach((sp, i) => {
     const { it, who } = sp;
     lines.push({ who, text: it[who], gap: 0.28 + sp.pause });
@@ -102,6 +130,21 @@ export function build(script, o = {}) {
       if (em) {
         keys[w].push({ ...at, t: 0.1, emote: em, emoteK: 0, e: 'step' }, { ...at, t: 0.45, emoteK: 1, e: 'out' }, { le: i, t: 0.5, emoteK: 1 }, { le: i, t: 0.75, emoteK: 0, e: 'in' });
         sfx.push({ s: em === 'bombilla' ? 'ding' : 'pop', l: i, t: 0.1, g: 0.45 });
+      }
+    }
+    // poses: the speaker's body says what the line is; the listener changes only now and then
+    for (const w of KIDS) {
+      const talking = speakers.includes(w);
+      let next;
+      if (talking) next = it.pose && who !== 'ambos' ? it.pose : POSES[w][who === 'ambos' ? 'cierre' : lineKind(it, it[who])];
+      else next = it.pose_otro ?? (i % 3 === 0 || poseNow[w] === null || !POSES[w].escucha.includes(poseNow[w]) ? POSES[w].escucha : [poseNow[w]]);
+      if (Array.isArray(next)) {
+        const opts = next.filter(n => n !== poseNow[w]);
+        next = opts.length ? opts[hash(`${script.id}${i}${w}`) % opts.length] : next[0];
+      }
+      if (next !== poseNow[w]) {
+        keys[w].push({ ...at, t: -0.08, pose0: poseNow[w], pose: next, poseK: 0, e: 'step' }, { ...at, t: 0.08, poseK: 1, e: 'out' });
+        poseNow[w] = next;
       }
     }
     if (it.tarjeta) cards.push({ i, ...it.tarjeta });

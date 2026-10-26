@@ -106,12 +106,18 @@ await page.route(`${ORIGIN}/**`, r => {
 await page.goto(`${ORIGIN}/`);
 const rigs = Object.fromEntries(['e', 'r'].map(w => [w, JSON.parse(fs.readFileSync(path.join(ROOT, `assets/characters/${w}/rig.json`), 'utf8'))]));
 const imgs = Object.fromEntries(['e', 'r'].map(w => [w, Object.fromEntries(['head', 'body', 'blink', 'jaw'].map(k => [k, `${ORIGIN}/assets/characters/${w}/${k}.png`]))]));
+// Chiño's poses (tools/prepare_poses.py): only the ones this episode uses, so the page loads fast
+const used = Object.fromEntries(['e', 'r'].map(w => [w, new Set(ep.beats.flatMap(b => (b.actors || []).filter(a => a.type === 'kid' && a.id === w).flatMap(a => a.k.flatMap(k => [k.pose, k.pose0]))).filter(n => n && rigs[w].poses?.[n]))]));
+for (const w of ['e', 'r']) {
+  imgs[w].poses = Object.fromEntries([...used[w]].map(n => [n, `${ORIGIN}/assets/characters/${w}/poses/${n}.png`]));
+  imgs[w].fronts = Object.fromEntries([...used[w]].filter(n => rigs[w].poses[n].front).map(n => [n, `${ORIGIN}/assets/characters/${w}/poses/${n}-front.png`]));
+}
 await page.evaluate(d => { window.DATA = d.data; window.KID_RIG = d.rigs; window.KID_IMG = d.imgs; }, { data: { ep, beats, w: W, h: H, fps: FPS, life: process.env.CDM_LIFE !== '0' }, rigs, imgs });
 for (const f of ['puppets.js', 'stage.js']) await page.addScriptTag({ path: path.join(ROOT, 'src', f) });
 await page.waitForFunction('window.ready === true');
 await page.evaluate('document.fonts.ready');
 // decode the character layers before the first frame
-await page.evaluate(async urls => { await Promise.all(urls.map(u => new Promise(res => { const i = new Image(); i.onload = i.onerror = res; i.src = u; }))); }, Object.values(imgs).flatMap(o => Object.values(o)));
+await page.evaluate(async urls => { await Promise.all(urls.map(u => new Promise(res => { const i = new Image(); i.onload = i.onerror = res; i.src = u; }))); }, Object.values(imgs).flatMap(o => Object.values(o).flatMap(v => (typeof v === 'string' ? [v] : Object.values(v)))));
 
 const video = path.join(work, 'video.mp4');
 const ff = spawn('ffmpeg', ['-y', '-v', 'error', '-f', 'image2pipe', '-framerate', String(FPS), '-c:v', 'mjpeg', '-i', '-',

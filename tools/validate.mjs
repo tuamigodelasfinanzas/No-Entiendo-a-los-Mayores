@@ -18,6 +18,7 @@ const block = name => { const a = puppets.indexOf(`const ${name} = {`); const b 
 const keysOf = src => [...src.matchAll(/^ {4}([a-záéíóúñ]+): /gim)].map(m => m[1]);
 const EXPR = keysOf(block('EXPR')), ICONS = keysOf(block('ICONS')), SETS = keysOf(block('SETS'));
 const director = fs.readFileSync(path.join(ROOT, 'src/director.mjs'), 'utf8');
+const POSES = Object.fromEntries(['e', 'r'].map(w => [w, Object.keys(JSON.parse(fs.readFileSync(path.join(ROOT, `assets/characters/${w}/rig.json`), 'utf8')).poses || {})]));
 const GESTURES = [...director.slice(director.indexOf('const GESTURES'), director.indexOf('};', director.indexOf('const GESTURES'))).matchAll(/^ {2}([a-z]+): /gm)].map(m => m[1]);
 const EMOTES = ['?', '!', '??', '...', 'bombilla', 'gota', 'corazon', 'lio', 'brillo'];
 const REACTIONS = ['silencio', 'mirada', 'parpadeo', 'giro', 'arriba'];
@@ -78,6 +79,11 @@ for (const f of files) {
       if (ln.cara && !EXPR.includes(ln.cara)) err(id, `${where}: cara "${ln.cara}" no existe (${EXPR.join(', ')})`);
       if (ln.otro && !EXPR.includes(ln.otro)) err(id, `${where}: cara del otro "${ln.otro}" no existe`);
       for (const g of [ln.gesto, ln.gesto_otro]) if (g && !GESTURES.includes(g)) err(id, `${where}: gesto "${g}" no existe (${GESTURES.join(', ')})`);
+      {
+        const sp = speakerOf(ln), oth = sp === 'e' ? 'r' : 'e';
+        if (ln.pose && (sp === 'ambos' || !POSES[sp].includes(ln.pose))) err(id, `${where}: pose "${ln.pose}" no existe para ${sp} (${sp === 'ambos' ? 'no se usa con ambos' : POSES[sp].join(', ')})`);
+        if (ln.pose_otro && (sp === 'ambos' || !POSES[oth].includes(ln.pose_otro))) err(id, `${where}: pose_otro "${ln.pose_otro}" no existe para ${oth}`);
+      }
       for (const e of [ln.emote, ln.emote_otro]) if (e && !EMOTES.includes(e)) err(id, `${where}: emote "${e}" no existe (${EMOTES.join(', ')})`);
       if (ln.tarjeta) {
         cards++;

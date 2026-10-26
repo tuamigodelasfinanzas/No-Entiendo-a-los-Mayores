@@ -64,5 +64,57 @@
   1166
  ],
  "skin": "#FAB78A",
- "lid": "#F6B084"
+ "lid": "#F6B084",
+ "poses": {
+  "mano-barbilla": {
+   "h": 1207,
+   "feet": 1150,
+   "front": true
+  },
+  "levanta-mano": {
+   "h": 1207,
+   "feet": 1150
+  },
+  "senala-a-e": {
+   "h": 1207,
+   "feet": 1150
+  },
+  "brazos-cruzados": {
+   "h": 1207,
+   "feet": 1150
+  },
+  "palmas-arriba": {
+   "h": 1207,
+   "feet": 1150
+  },
+  "mano-frente": {
+   "h": 1207,
+   "feet": 1150,
+   "front": true
+  },
+  "con-balon": {
+   "h": 1207,
+   "feet": 1150
+  },
+  "caminando": {
+   "h": 1208,
+   "feet": 1150
+  },
+  "sentado": {
+   "h": 1200,
+   "feet": 870
+  },
+  "senala-arriba": {
+   "h": 1207,
+   "feet": 1150
+  },
+  "atandose": {
+   "h": 1200,
+   "feet": 980
+  },
+  "leyendo": {
+   "h": 1207,
+   "feet": 1150
+  }
+ }
 }

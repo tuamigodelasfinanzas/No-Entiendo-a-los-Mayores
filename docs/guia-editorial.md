@@ -67,10 +67,10 @@ Un archivo por episodio en `content/guiones/es/NNN-tema.json`. El director (`src
 }
 ```
 
-Campos de una línea: el personaje (`"e"`, `"r"` o `"ambos"`) con su texto; `cara` (de quien habla), `otro` (cara del que escucha), `gesto` / `gesto_otro`, `emote` / `emote_otro`, `mira` (`camara`, `arriba`), `tarjeta` (`icono` + `texto` de hasta 16 caracteres), `plano` (`dos`, `medio`, `cerca`) si se quiere forzar.
+Campos de una línea: el personaje (`"e"`, `"r"` o `"ambos"`) con su texto; `cara` (de quien habla), `otro` (cara del que escucha), `gesto` / `gesto_otro`, `pose` / `pose_otro` (una de las poses de Chiño, ver docs/direccion.md; si no se pone, la elige el director), `emote` / `emote_otro`, `mira` (`camara`, `arriba`), `tarjeta` (`icono` + `texto` de hasta 16 caracteres), `plano` (`dos`, `medio`, `cerca`) si se quiere forzar.
 Una pausa: `{"pausa": segundos, "reaccion": "...", "caras": {...}, "emote": {"e": "?"}}`.
 Escenarios: `dormitorio`, `salon`, `parque`, `cocina`, `cole`, `calle`. Iconos de tarjeta: los de `ICONS` en `src/puppets.js` (casa, tarjeta, moneda, billetes, movil, reloj, calendario, pesa, cafe, nube, candado, grafica, carrito, factura, coche, galleta, like, maleta, despertador, wifi, banco, oferta, tarta, mensaje, robot, maletin, portatil, tele, hucha, escudo, anillo, llave, bocadillo, lunes, reunion, ticket).
 
 ## 7. Control de calidad
 
-`node tools/validate.mjs` comprueba antes de renderizar: campos obligatorios, serie / pilar / tema / estructura / escenario válidos, tema no repetido, los dos hablan, líneas cortas, palabras a evitar, caras, gestos, emotes e iconos que existen, pausas con tope, cierre de marca presente, aprendizaje presente, duración estimada en rango, variedad del catálogo (series, estructuras, intercambio de papeles, series seguidas) y el calendario. Después de un render con voz, `node tools/validate.mjs --timing out/*/timing.json` comprueba la duración real.
+`node tools/validate.mjs` comprueba antes de renderizar: campos obligatorios, serie / pilar / tema / estructura / escenario válidos, tema no repetido, los dos hablan, líneas cortas, palabras a evitar, caras, gestos, poses, emotes e iconos que existen, pausas con tope, cierre de marca presente, aprendizaje presente, duración estimada en rango, variedad del catálogo (series, estructuras, intercambio de papeles, series seguidas) y el calendario. Después de un render con voz, `node tools/validate.mjs --timing out/*/timing.json` comprueba la duración real.

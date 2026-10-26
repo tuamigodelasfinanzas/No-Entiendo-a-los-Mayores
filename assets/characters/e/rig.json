@@ -64,5 +64,57 @@
   1166
  ],
  "skin": "#FBBC90",
- "lid": "#F7B489"
+ "lid": "#F7B489",
+ "poses": {
+  "explica": {
+   "h": 1207,
+   "feet": 1150
+  },
+  "senala": {
+   "h": 1207,
+   "feet": 1150
+  },
+  "brazos-cruzados": {
+   "h": 1207,
+   "feet": 1150
+  },
+  "encoge": {
+   "h": 1207,
+   "feet": 1150
+  },
+  "rasca": {
+   "h": 1207,
+   "feet": 1150,
+   "front": true
+  },
+  "manos-cadera": {
+   "h": 1207,
+   "feet": 1150
+  },
+  "salta": {
+   "h": 1229,
+   "feet": 1171
+  },
+  "corre": {
+   "h": 1200,
+   "feet": 1127
+  },
+  "susurra": {
+   "h": 1207,
+   "feet": 1150,
+   "front": true
+  },
+  "pulgar-arriba": {
+   "h": 1207,
+   "feet": 1150
+  },
+  "idea": {
+   "h": 1207,
+   "feet": 1150
+  },
+  "corazon": {
+   "h": 1207,
+   "feet": 1150
+  }
+ }
 }

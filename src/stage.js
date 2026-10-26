@@ -164,7 +164,7 @@
         svg = kid(ks);
         // where the mouth is on screen, so the caption bubble can point at whoever speaks
         const rig = window.KID_RIG[ks.who], m = rig.jaw || rig.mouth, ksc = ks.s ?? 1;
-        let wx = ks.x + (m.x - rig.center) * ksc * (ks.flip ? -1 : 1) + (ks.headX ?? 0) * ksc, wy = ks.y + (m.y - rig.feet) * ksc + (ks.headY ?? 0) * ksc;
+        let wx = ks.x + (m.x - rig.center) * ksc * (ks.flip ? -1 : 1) + (ks.headX ?? 0) * ksc, wy = ks.y + (m.y - rig.feet) * ksc + ((ks.headY ?? 0) + window.PUPPETS.poseDy(ks)) * ksc;
         if (a.depth != null && a.depth !== 1) { const k = (1 + (cz - 1) * a.depth) / cz; wx = cx + (wx - cx) * k + (cx - W / 2) * (1 - a.depth); wy = cy + (wy - cy) * k + (cy - H / 2) * (1 - a.depth); }
         mouths[ks.who] = { x: W / 2 + (wx - cx) * cz, y: H / 2 + (wy - cy) * cz };
       } else if (PROPS[a.type]) {
