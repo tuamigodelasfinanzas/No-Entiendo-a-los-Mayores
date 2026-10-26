@@ -145,6 +145,7 @@
     if (tr.dy) cy += tr.dy;
     const shake = cam.shake ? `translate(${(Math.sin(gt * 61) * cam.shake).toFixed(1)} ${(Math.cos(gt * 47) * cam.shake).toFixed(1)})` : '';
     let world = '', overlay = '';
+    const mouths = {};
     const actors = beat.actors.slice().sort((a, b) => a.z - b.z);
     for (const a of actors) {
       const st = stateAt(a.keys, lt, beat);
@@ -159,7 +160,13 @@
         st.talk = sp >= 0 && st.mute !== true ? Math.max(0, 0.55 + 0.35 * Math.sin(sp * 17.3) + 0.25 * Math.sin(sp * 29.1 + 1.3)) * Math.min(1, sp * 8) : 0;
         const ln = sp >= 0 ? beat.lines.find(l => (l.who === st.who || l.who === 'ambos') && gt >= l.start && gt <= l.start + l.dur) : null;
         if (ln && gt > ln.start + ln.dur - 0.08) st.talk = 0;
-        svg = kid(LIFE && st.life !== false ? alive(a, st, beat, lt, gt, sp) : { ...st });
+        const ks = LIFE && st.life !== false ? alive(a, st, beat, lt, gt, sp) : { ...st };
+        svg = kid(ks);
+        // where the mouth is on screen, so the caption bubble can point at whoever speaks
+        const rig = window.KID_RIG[ks.who], m = rig.jaw || rig.mouth, ksc = ks.s ?? 1;
+        let wx = ks.x + (m.x - rig.center) * ksc * (ks.flip ? -1 : 1) + (ks.headX ?? 0) * ksc, wy = ks.y + (m.y - rig.feet) * ksc + (ks.headY ?? 0) * ksc;
+        if (a.depth != null && a.depth !== 1) { const k = (1 + (cz - 1) * a.depth) / cz; wx = cx + (wx - cx) * k + (cx - W / 2) * (1 - a.depth); wy = cy + (wy - cy) * k + (cy - H / 2) * (1 - a.depth); }
+        mouths[ks.who] = { x: W / 2 + (wx - cx) * cz, y: H / 2 + (wy - cy) * cz };
       } else if (PROPS[a.type]) {
         const inner = PROPS[a.type](st);
         svg = `<g transform="translate(${st.x ?? 0} ${st.y ?? 0}) rotate(${st.r ?? 0}) scale(${(st.sc ?? 1) * (st.fx ? -1 : 1)} ${st.sc ?? 1})" opacity="${st.o ?? 1}">${inner}</g>`;
@@ -181,14 +188,14 @@
     if (cam.flash) html += `<rect width="${W}" height="${H}" fill="#fff" opacity="${cam.flash}"/>`;
     if (cam.black) html += `<rect width="${W}" height="${H}" fill="#111" opacity="${cam.black}"/>`;
     html += tr.over || '';
-    html += captions(beat, gt) + '</svg>';
+    html += captions(beat, gt, mouths) + '</svg>';
     root.innerHTML = html;
   }
 
   // burned-in captions as a speech bubble over the speaker's side: the line in chunks of up to ~6 words, timed by
   // the word boundaries of the voice, the word being said in the speaker's colour. Inside the safe area of
   // Reels / Shorts / Facebook (clear of the top bar, the bottom caption and the right-hand buttons).
-  function captions(beat, gt) {
+  function captions(beat, gt, mouths = {}) {
     if (ep.captions === false) return '';
     for (const ln of beat.lines) {
       if (gt < ln.start || gt > ln.start + ln.dur + 0.12 || !ln.text) continue;
@@ -210,18 +217,25 @@
       const tsp = lines.map(l => l.split(' ').map(wd => { const i = ch[k++]; return `<tspan fill="${i === idx ? col : INK}">${esc(wd)}</tspan>`; }).join(' '));
       const w = Math.min(980, Math.max(...lines.map(l => l.length)) * fs * 0.55 + 80), h = lines.length * lh + 44;
       const side = who === 'e' ? -1 : who === 'r' ? 1 : 0;
-      const cx = Math.max(w / 2 + 50, Math.min(W - w / 2 - 50, W / 2 + side * 150)), cy = ep.capY ?? 1470;
-      // the tail points up, towards the speaker's face
-      const tx = W / 2 + side * 260, ty = cy - h / 2;
-      const b0 = Math.max(cx - w / 2 + 50, Math.min(cx + w / 2 - 110, tx - 30)), b1 = b0 + 60;
-      const tail = `M ${b0.toFixed(1)} ${(ty + 4).toFixed(1)} L ${(tx + side * 34).toFixed(1)} ${(ty - 64).toFixed(1)} L ${b1.toFixed(1)} ${(ty + 4).toFixed(1)} Z`;
-      const name = ep.names?.[who];
+      const cy = ep.capY ?? 1470, ty = cy - h / 2;
+      // the bubble sits under the speaker and its tail points at the speaker's mouth (both kids for "ambos")
+      const targets = (who === 'ambos' ? ['e', 'r'] : [who]).map(k => mouths[k]).filter(Boolean);
+      const fallback = { x: W / 2 + side * 260, y: ty - 400 };
+      const aim = targets.length ? targets : [fallback];
+      const mx = who === 'ambos' ? W / 2 : aim[0].x;
+      const cx = Math.max(w / 2 + 50, Math.min(W - w / 2 - 50, mx));
+      const tail = aim.map(p => {
+        const bx = Math.max(cx - w / 2 + 60, Math.min(cx + w / 2 - 60, p.x));        // base on the top edge, under the mouth
+        const dx = p.x - bx, dy = Math.min(-40, p.y + 50 - ty), L = Math.hypot(dx, dy) || 1;
+        const len = Math.min(95, Math.max(48, L - 40));                               // stops short of the face
+        const tx = bx + dx / L * len, tyy = ty + dy / L * len;
+        return `M ${(bx - 32).toFixed(1)} ${(ty + 4).toFixed(1)} L ${tx.toFixed(1)} ${tyy.toFixed(1)} L ${(bx + 32).toFixed(1)} ${(ty + 4).toFixed(1)} Z`;
+      }).join(' ');
       const sc = 0.85 + 0.15 * (1 - Math.pow(1 - pop, 3));
       return `<g transform="translate(${cx.toFixed(1)} ${cy.toFixed(1)}) scale(${sc.toFixed(3)}) translate(${(-cx).toFixed(1)} ${(-cy).toFixed(1)})">
         <path d="${tail}" fill="#fff" stroke="${INK}" stroke-width="7" stroke-linejoin="round"/>
         <rect x="${(cx - w / 2).toFixed(1)}" y="${(cy - h / 2).toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="40" fill="#fff" stroke="${INK}" stroke-width="7"/>
         <path d="${tail}" fill="#fff" stroke="none" transform="translate(0 9)"/>
-        ${name ? `<g transform="translate(${(side > 0 ? cx + w / 2 - 74 - name.length * 24 : cx - w / 2 + 34).toFixed(1)} ${(cy + h / 2 + 8).toFixed(1)})"><rect x="0" y="-30" width="${(name.length * 24 + 40).toFixed(0)}" height="50" rx="25" fill="${col}" stroke="${INK}" stroke-width="5"/><text x="${((name.length * 24 + 40) / 2).toFixed(0)}" y="-4" text-anchor="middle" dominant-baseline="central" font-family="${FONT}" font-weight="700" font-size="32" fill="#fff">${esc(name)}</text></g>` : ''}
         ${tsp.map((t, i) => `<text x="${cx.toFixed(1)}" y="${(cy - h / 2 + 22 + lh * (i + 0.5)).toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-family="${FONT}" font-weight="700" font-size="${fs}">${t}</text>`).join('')}</g>`;
     }
     return '';

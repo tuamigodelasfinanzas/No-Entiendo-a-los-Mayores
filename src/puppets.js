@@ -11,8 +11,8 @@
   const f1 = v => (+v).toFixed(1);
 
   // ---------- expressions (docs/biblia-personajes.md §4) ----------
-  // brows: [left, right] { up: px raised, tilt: inner end up (+) / down (-) }, lids: upper lid cover 0..1,
-  // mouth: { w: width factor, curve: smile (+) / frown (-), open 0..1, round 0..1 (an "o"), asym: one corner up }
+  // The scripts' vocabulary of faces. The faces themselves are the drawing, so of these values only mouth.open is
+  // used (a surprised face keeps the mouth a little open); the rest is kept for when the drawn faces get variants.
   const B = (up = 0, tilt = 0) => ({ up, tilt });
   const EXPR = {
     neutral: { brows: [B(), B()], lids: [0.12, 0.12], mouth: { w: 0.62, curve: 0.35 } },
@@ -34,94 +34,6 @@
   };
   const lerp = (a, b, k) => a + (b - a) * k;
 
-  function eyes(rig, st, id) {
-    const ex = EXPR[st.face] || EXPR.neutral;
-    const look = st.look || ex.look || [0, 0];
-    const blink = st.blink || 0;
-    let out = '';
-    rig.eyes.forEach((e, i) => {
-      const { x, y, w, h } = e;
-      const top = `M ${f1(x - w / 2)} ${f1(y + h * 0.06)} C ${f1(x - w * 0.36)} ${f1(y - h * 0.66)} ${f1(x + w * 0.36)} ${f1(y - h * 0.66)} ${f1(x + w / 2)} ${f1(y + h * 0.02)}`;
-      const shape = `${top} C ${f1(x + w * 0.34)} ${f1(y + h * 0.62)} ${f1(x - w * 0.34)} ${f1(y + h * 0.62)} ${f1(x - w / 2)} ${f1(y + h * 0.06)} Z`;
-      const ir = h * 0.5, pr = ir * 0.5 * (st.pupil ?? ex.pupil ?? 1);
-      const ix = x + look[0] * w * 0.2, iy = y + h * 0.05 + look[1] * h * 0.14;
-      const lid = Math.min(1, Math.max(ex.lids[i] ?? 0, st.lid ?? 0, blink));
-      const ly = y - h * 0.58 + lid * h * 1.18;           // lower edge of the upper lid
-      const cid = `${id}eye${i}`;
-      out += `<clipPath id="${cid}"><path d="${shape}"/></clipPath>
-        <path d="${shape}" fill="#FFFDF8"/>
-        <g clip-path="url(#${cid})">
-          <ellipse cx="${f1(x)}" cy="${f1(y - h * 0.34)}" rx="${f1(w * 0.6)}" ry="${f1(h * 0.3)}" fill="#E9D6CC" opacity="0.7"/>
-          <circle cx="${f1(ix)}" cy="${f1(iy)}" r="${f1(ir)}" fill="url(#${id}iris)"/>
-          <circle cx="${f1(ix)}" cy="${f1(iy)}" r="${f1(ir)}" fill="none" stroke="${rig.iris[0]}" stroke-width="2.2"/>
-          <circle cx="${f1(ix)}" cy="${f1(iy)}" r="${f1(pr)}" fill="#120A06"/>
-          <circle cx="${f1(ix + ir * 0.32)}" cy="${f1(iy - ir * 0.36)}" r="${f1(ir * 0.27)}" fill="#fff"/>
-          <circle cx="${f1(ix - ir * 0.34)}" cy="${f1(iy + ir * 0.34)}" r="${f1(ir * 0.11)}" fill="#fff" opacity="0.85"/>
-          ${lid > 0.01 ? `<path d="M ${f1(x - w)} ${f1(y - h * 1.2)} H ${f1(x + w)} V ${f1(ly)} Q ${f1(x)} ${f1(ly + h * 0.22 * (1 - lid * 0.6))} ${f1(x - w)} ${f1(ly)} Z" fill="${rig.lid || rig.skin}"/>` : ''}
-        </g>`;
-      // lash line: along the lid edge, or the top of the eye when the lid is up
-      // the ends stay on the eye corners, so a closed eye reads as a soft arc, not a bar
-      const le = Math.min(Math.max(ly, y - h * 0.3), y + h * 0.05);
-      const lm = Math.min(Math.max(ly, y - h * 0.4) + h * 0.22 * (1 - lid * 0.6), y + h * 0.3);
-      const lash = lid > 0.16
-        ? `M ${f1(x - w / 2 - 2)} ${f1(le)} Q ${f1(x)} ${f1(2 * lm - le)} ${f1(x + w / 2 + 3)} ${f1(le)}`
-        : top;
-      const flick = i === 0 ? `M ${f1(x - w / 2)} ${f1(y + h * 0.02)} l -7 -6` : `M ${f1(x + w / 2)} ${f1(y)} l 7 -6`;
-      out += `<path d="${lash}" fill="none" stroke="#2A1810" stroke-width="5" stroke-linecap="round"/>
-        <path d="${flick}" fill="none" stroke="#2A1810" stroke-width="4" stroke-linecap="round"/>
-        <path d="M ${f1(x - w * 0.4)} ${f1(y + h * 0.34)} Q ${f1(x)} ${f1(y + h * 0.58)} ${f1(x + w * 0.4)} ${f1(y + h * 0.34)}" fill="none" stroke="#B07A5E" stroke-width="1.8" opacity="0.6"/>`;
-    });
-    return out;
-  }
-
-  function brows(rig, st) {
-    const ex = EXPR[st.face] || EXPR.neutral;
-    return rig.brows.map((b, i) => {
-      const d = i === 0 ? 1 : -1;                 // left brow: inner end to the right
-      const p = ex.brows[i] || B();
-      const up = p.up + (st.browUp ?? 0), t = p.tilt;
-      const ix = b.x + d * b.w / 2, ox = b.x - d * b.w / 2;
-      const iy = b.y - up - t * 1.4, oy = b.y - up + t * 0.6 + 3;
-      const my = b.y - up - 8;
-      const th = 10;
-      return `<path d="M ${f1(ox)} ${f1(oy)} Q ${f1(b.x)} ${f1(my - th / 2)} ${f1(ix)} ${f1(iy)} Q ${f1(b.x)} ${f1(my + th)} ${f1(ox)} ${f1(oy)} Z" fill="${rig.brow}" stroke="${rig.brow}" stroke-width="3.5" stroke-linejoin="round"/>`;
-    }).join('');
-  }
-
-  function mouth(rig, st, id) {
-    const ex = EXPR[st.face] || EXPR.neutral;
-    const m = Object.assign({ w: 0.6, curve: 0.3, open: 0, round: 0, asym: 0 }, ex.mouth);
-    const talk = st.talk || 0;
-    // talking opens the mouth from its resting shape
-    const open = Math.min(1, m.open + talk * (0.55 - m.open * 0.3));
-    const W = rig.mouth.w, cx = rig.mouth.x, cy = rig.mouth.y;
-    const round = Math.max(m.round, talk * 0.25);
-    const hw = W / 2 * lerp(m.w, 0.34, round * 0.8) * (1 - talk * 0.08);
-    const cyL = -m.curve * W * 0.1 - m.asym * W * 0.06, cyR = -m.curve * W * 0.1 + m.asym * W * 0.06;
-    const midClosed = m.curve * W * 0.1;
-    if (open < 0.06) {
-      return `<path d="M ${f1(cx - hw)} ${f1(cy + cyL)} Q ${f1(cx)} ${f1(cy + midClosed * 1.4)} ${f1(cx + hw)} ${f1(cy + cyR)}" fill="none" stroke="${rig.lip}" stroke-width="5.5" stroke-linecap="round"/>
-        ${m.curve > 0.5 ? `<path d="M ${f1(cx - hw - 5)} ${f1(cy + cyL - 3)} q 4 3 6 8 M ${f1(cx + hw + 5)} ${f1(cy + cyR - 3)} q -4 3 -6 8" fill="none" stroke="${rig.lip}" stroke-width="2.6" stroke-linecap="round" opacity="0.6"/>` : ''}`;
-    }
-    if (round > 0.5) {
-      // an "o": an oval that opens with the voice
-      const rx = W * (0.11 + open * 0.05) * (m.w / 0.4), ry = W * (0.1 + open * 0.13);
-      return `<ellipse cx="${f1(cx)}" cy="${f1(cy + ry * 0.35)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="#5B1E18" stroke="${rig.lip}" stroke-width="3.6"/>
-        <ellipse cx="${f1(cx)}" cy="${f1(cy + ry * 1.0)}" rx="${f1(rx * 0.6)}" ry="${f1(ry * 0.35)}" fill="#E0736E"/>`;
-    }
-    const topY = midClosed * 0.4 - open * W * 0.04 - round * open * W * 0.12;
-    const botY = midClosed * 1.3 + open * W * (0.3 + round * 0.12);
-    const shape = `M ${f1(cx - hw)} ${f1(cy + cyL)} Q ${f1(cx)} ${f1(cy + topY * 2 - (cyL + cyR) / 2)} ${f1(cx + hw)} ${f1(cy + cyR)} Q ${f1(cx)} ${f1(cy + botY * 2 - (cyL + cyR) / 2)} ${f1(cx - hw)} ${f1(cy + cyL)} Z`;
-    const cid = `${id}mouth`;
-    return `<clipPath id="${cid}"><path d="${shape}"/></clipPath>
-      <path d="${shape}" fill="#5B1E18"/>
-      <g clip-path="url(#${cid})">
-        <rect x="${f1(cx - hw)}" y="${f1(cy + Math.min(cyL, cyR) - W * 0.2)}" width="${f1(hw * 2)}" height="${f1(W * 0.2 + (topY > 0 ? topY : 0) + W * 0.08 * Math.min(1, open * 2) * (1 - round))}" fill="#FFFFFF"/>
-        <ellipse cx="${f1(cx)}" cy="${f1(cy + botY)}" rx="${f1(hw * 0.7)}" ry="${f1(W * 0.12)}" fill="#E0736E"/>
-      </g>
-      <path d="${shape}" fill="none" stroke="${rig.lip}" stroke-width="3.6" stroke-linejoin="round"/>`;
-  }
-
   // emotes over the head: ? ! ... bulb, drop, hearts, swirl, sparkle
   function emote(kind, k, x, y) {
     if (!kind || k <= 0) return '';
@@ -139,23 +51,40 @@
     return `<g transform="translate(${f1(x)} ${f1(y)}) scale(${f1(s)}) rotate(${f1(Math.sin(k * 7) * 4)})">${g}</g>`;
   }
 
-  // a kid: st = { who: 'e'|'r', x, y (floor), s, face, look, blink, talk, headR, headX, headY, lean, squash, flip, emote, emoteK, o }
+  // a kid: st = { who: 'e'|'r', x, y (floor), s, face, look, blink, talk, headR, headX, headY, lean, flip, emote, emoteK, o }
+  // The face is Chiño's drawing, untouched (docs/biblia-personajes.md). Only two things move, both made from the
+  // drawing itself by tools/prepare_characters.py: the eyes close (blink.png) and, while speaking, the part below
+  // the lip line slides down a few pixels (jaw.png) over the inside of the mouth.
+  function face(rig, img, st) {
+    const ex = EXPR[st.face] || EXPR.neutral;
+    const j = rig.jaw, talk = Math.max(0, Math.min(1, Math.max(st.talk || 0, (ex.mouth?.open || 0) * 0.6)));
+    const d = talk * j.d;
+    const mouth = d > 0.4
+      ? `<path d="M ${f1(j.ox - j.ow)} ${j.y - 1} Q ${j.ox} ${f1(j.y - 2)} ${f1(j.ox + j.ow)} ${j.y - 1} Q ${j.ox} ${f1(j.y + d * 2.2)} ${f1(j.ox - j.ow)} ${j.y - 1} Z" fill="${j.inside}"/>
+         <ellipse cx="${j.ox}" cy="${f1(j.y + d * 0.9)}" rx="${f1(j.ow * 0.45)}" ry="${f1(d * 0.35)}" fill="#B4504A" opacity="0.8"/>
+         <image href="${img.jaw}" x="0" y="${f1(d)}" width="${rig.w}" height="${rig.h}"/>`
+      : '';
+    const shut = Math.max(st.blink || 0, st.lid || 0) > 0.5;
+    return mouth + (shut ? `<image href="${img.blink}" x="0" y="0" width="${rig.w}" height="${rig.h}"/>` : '');
+  }
+
   function kid(st) {
     const rig = RIG[st.who], img = IMG[st.who];
     const id = `k${st.who}`;
-    const s = st.s ?? 1, sq = st.squash ?? 1;
+    // never squashed or stretched: the kids always keep the proportions of the drawing (Chiño's rule), so the
+    // squash that stage.js / director.mjs compute is ignored here; jumps and dips still move the whole body
+    const s = st.s ?? 1;
     const [px, py] = rig.pivot;
     const sh = `<ellipse cx="${rig.center}" cy="${rig.feet + 4}" rx="${f1(200 * (1 - (st.jump ?? 0) * 0.002))}" ry="26" fill="url(#kshadow)"/>`;
     const head = `<g transform="translate(${f1(st.headX ?? 0)} ${f1(st.headY ?? 0)}) rotate(${f1(st.headR ?? 0)} ${px} ${py})">
         <image href="${img.head}" x="0" y="0" width="${rig.w}" height="${rig.h}"/>
-        ${brows(rig, st)}${eyes(rig, st, id)}${mouth(rig, st, id)}
+        ${face(rig, img, st)}
         ${st.blush ? `<g opacity="${f1(st.blush)}"><ellipse cx="${rig.eyes[0].x - 10}" cy="${rig.mouth.y - 22}" rx="34" ry="18" fill="#FF6B6B" opacity="0.35"/><ellipse cx="${rig.eyes[1].x + 10}" cy="${rig.mouth.y - 22}" rx="34" ry="18" fill="#FF6B6B" opacity="0.35"/></g>` : ''}
       </g>`;
-    const defs = `<defs><radialGradient id="${id}iris" cx="50%" cy="58%" r="55%"><stop offset="0" stop-color="${rig.iris[2]}"/><stop offset="0.55" stop-color="${rig.iris[1]}"/><stop offset="1" stop-color="${rig.iris[0]}"/></radialGradient></defs>`;
     const em = emote(st.emote, st.emoteK ?? 1, rig.center + (st.who === 'e' ? 190 : -190), rig.bbox[1] + 40);
     const flip = st.flip ? -1 : 1;
-    return `<g transform="translate(${f1(st.x)} ${f1(st.y)}) rotate(${f1(st.lean ?? 0)}) scale(${f1(s * flip / Math.sqrt(sq))} ${f1(s * sq)}) translate(${-rig.center} ${-rig.feet})" opacity="${st.o ?? 1}">
-      ${defs}${sh}<image href="${img.body}" x="0" y="0" width="${rig.w}" height="${rig.h}"/>${head}${em}</g>`;
+    return `<g transform="translate(${f1(st.x)} ${f1(st.y)}) rotate(${f1(st.lean ?? 0)}) scale(${f1(s * flip)} ${f1(s)}) translate(${-rig.center} ${-rig.feet})" opacity="${st.o ?? 1}">
+      ${sh}<image href="${img.body}" x="0" y="0" width="${rig.w}" height="${rig.h}"/>${head}${em}</g>`;
   }
 
   // ---------- icons for the insert cards (centered at 0,0, about 200 px) ----------

@@ -4,6 +4,8 @@ Dos niños intentan entender el mundo de los adultos. No son más listos que los
 
 Los diseños son los de las hojas de Chiño (`assets/characters/source/`). `tools/prepare_characters.py` los convierte en las capas que se animan (`assets/characters/e|r/`).
 
+**Las caras son el dibujo, tal cual.** No se redibujan ojos, cejas ni boca. Solo se mueven dos cosas, hechas con trozos del propio dibujo: los ojos se cierran al parpadear (`blink.png`) y, al hablar, la parte bajo el labio baja unos píxeles y deja ver el interior de la boca (`jaw.png`).
+
 ## 1. Los dos
 
 | | **E** | **R** |
@@ -30,7 +32,7 @@ E **no** es el listo ni R el tonto (ni al revés). E sabe la mitad de las cosas 
 ## 2. Reglas de diálogo
 
 - **Frases cortas.** Máximo 90 caracteres por línea; lo normal son 3 a 9 palabras. R suele hablar menos que E.
-- **Sin nombrarse.** Se llaman E y R, pero no se llaman por su nombre en el diálogo: una letra suelta no se entiende en voz alta. El nombre se ve en la etiqueta del bocadillo.
+- **Sin nombrarse.** Se llaman E y R, pero no se llaman por su nombre en el diálogo: una letra suelta no se entiende en voz alta. Quién habla se ve por la cola del bocadillo y el color de la palabra.
 - **Una línea, una voz.** Si los dos dicen algo a la vez, es una línea `"ambos"` (casi siempre el cierre).
 - **Turnos.** Pregunta → respuesta segura → pregunta que desmonta → respuesta que empeora... Un personaje puede encadenar dos líneas si la segunda es el giro.
 - **R desmonta con una sola pregunta.** "¿Y quién paga la tarjeta?" vale más que una explicación.
@@ -52,7 +54,7 @@ Una pausa es un gesto, no relleno: máximo 2 s cada una y 3,5 s por episodio.
 
 ## 4. Expresiones, gestos y emotes
 
-**Caras** (`src/puppets.js`, `EXPR`): `neutral`, `feliz`, `sonrisa`, `convencido`, `curioso`, `sorprendido`, `asombrado`, `serio`, `dudoso`, `pensativo`, `confundido`, `resignado`, `triste`, `picaro`, `enfadado`, `ilusionado`. Cada una mueve cejas (altura e inclinación), párpados y boca; la boca se abre con la voz (lip-sync) desde la forma de cada expresión.
+**Caras** (`src/puppets.js`, `EXPR`): `neutral`, `feliz`, `sonrisa`, `convencido`, `curioso`, `sorprendido`, `asombrado`, `serio`, `dudoso`, `pensativo`, `confundido`, `resignado`, `triste`, `picaro`, `enfadado`, `ilusionado`. Como la cara es el dibujo original, hoy solo cambian lo abierta que queda la boca (sorprendido, asombrado, feliz, ilusionado). Los nombres se mantienen en los guiones para cuando haya variantes dibujadas de la cara.
 
 **Gestos** (`src/director.mjs`, `GESTURES`): `salto`, `bota`, `asiente`, `niega`, `inclina`, `endereza`, `acerca`, `aparta`, `vuelve`, `encoge`. Con las manos en los bolsillos (como en las hojas), el cuerpo actúa con la cabeza, la postura y el peso.
 
