@@ -1,0 +1,40 @@
+{
+  "id": "014-comision",
+  "idioma": "es",
+  "serie": "diccionario",
+  "pilar": "dinero",
+  "tema": "comisión",
+  "formato": "definicion-absurda",
+  "escenario": "calle",
+  "roles": {
+    "pregunta": "r",
+    "explica": "e"
+  },
+  "titulo": "¿Qué es una comisión del banco?",
+  "cierre": {
+    "tipo": "reaccion",
+    "caras": {
+      "e": "serio",
+      "r": "enfadado"
+    }
+  },
+  "aprendizaje": "Una comisión es lo que cobra un banco por un servicio: mantener la cuenta, una transferencia o sacar dinero. Muchas se pueden evitar comparando bancos.",
+  "hashtags": [
+    "#banco",
+    "#comisiones",
+    "#finanzaspersonales"
+  ],
+  "lineas": [
+    {"r": "¿Qué es una comisión?", "tarjeta": {"icono": "banco", "texto": "COMISIÓN"}},
+    {"e": "Lo que te cobra el banco por cuidarte el dinero."},
+    {"r": "¿Y lo cuida bien?"},
+    {"e": "Muy bien. Cada mes hay un poco menos que cuidar.", "gesto": "asiente"},
+    {"r": "¿Y eso es bueno?", "cara": "dudoso"},
+    {"e": "Para el banco sí. Así se cansa menos.", "cara": "sonrisa"},
+    {"r": "¿Y si saco mi dinero del cajero?"},
+    {"e": "Otra comisión. Por dártelo.", "tarjeta": {"icono": "moneda", "texto": "-2 €"}},
+    {"r": "¡Pero si es mío!", "cara": "enfadado", "emote": "!"},
+    {"e": "Por eso te lo devuelven... casi entero.", "cara": "sonrisa"},
+    {"pausa": 1.3, "reaccion": "mirada", "caras": {"e": "serio", "r": "enfadado"}}
+  ]
+}

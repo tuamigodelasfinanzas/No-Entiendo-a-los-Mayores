@@ -1,0 +1,37 @@
+{
+  "id": "023-bizum",
+  "idioma": "es",
+  "serie": "ocho-anos",
+  "pilar": "dinero",
+  "tema": "Bizum",
+  "formato": "comparacion",
+  "escenario": "salon",
+  "roles": {
+    "pregunta": "r",
+    "explica": "e"
+  },
+  "titulo": "Bizum, explicado como si tuvieras ocho años",
+  "cierre": {
+    "tipo": "hablado"
+  },
+  "aprendizaje": "Bizum es un sistema de pagos entre móviles muy usado en España: el dinero pasa de una cuenta a otra al momento.",
+  "hashtags": [
+    "#bizum",
+    "#dinero",
+    "#pagos"
+  ],
+  "lineas": [
+    {"r": "Explícame qué es un Bizum como si tuviera ocho años.", "tarjeta": {"icono": "movil", "texto": "BIZUM"}},
+    {"e": "Es mandar dinero con el móvil. En un segundo."},
+    {"r": "¿Como magia?", "cara": "ilusionado", "emote": "brillo"},
+    {"e": "Casi. Pero solo es rápido cuando pagas tú.", "cara": "serio"},
+    {"r": "¿Por qué?"},
+    {"e": "Porque cuando te deben dinero, todos dicen: ahora te hago un Bizum."},
+    {"r": "¿Y lo hacen?", "cara": "curioso"},
+    {"e": "Ahora no. «Ahora» significa «algún día».", "gesto": "asiente"},
+    {"r": "¿Y cuando lo debes tú?"},
+    {"e": "Te lo piden en un segundo.", "tarjeta": {"icono": "reloj", "texto": "1 SEGUNDO"}},
+    {"r": "Qué rápido va el dinero cuando se va.", "cara": "pensativo"},
+    {"e": "Cosas de mayores.", "cara": "resignado"}
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "id": "030-suscripciones",
+  "idioma": "es",
+  "serie": "diccionario",
+  "pilar": "tecnologia",
+  "tema": "suscripciones digitales",
+  "formato": "correccion",
+  "escenario": "dormitorio",
+  "roles": {
+    "pregunta": "r",
+    "explica": "e"
+  },
+  "titulo": "¿Qué es una suscripción?",
+  "cierre": {
+    "tipo": "reaccion",
+    "caras": {
+      "e": "serio",
+      "r": "resignado"
+    }
+  },
+  "aprendizaje": "Muchas suscripciones empiezan con una prueba gratis y se renuevan solas; apuntar la fecha de fin ayuda a cancelar a tiempo.",
+  "hashtags": [
+    "#suscripciones",
+    "#apps",
+    "#ahorro"
+  ],
+  "lineas": [
+    {"r": "¿Qué es una suscripción?", "tarjeta": {"icono": "tele", "texto": "SUSCRIPCIÓN"}},
+    {"e": "Algo gratis.", "cara": "feliz"},
+    {"r": "¡Qué bien!", "cara": "feliz", "gesto": "bota"},
+    {"e": "Bueno, gratis el primer mes. Luego te cobran todos los meses.", "cara": "serio"},
+    {"r": "Pues lo quitas antes.", "cara": "convencido"},
+    {"e": "Eso piensa todo el mundo. Y se les olvida.", "gesto": "asiente"},
+    {"r": "¿Y cuando se acuerdan?"},
+    {"e": "Buscan el botón de cancelar."},
+    {"r": "¿Y dónde está?", "cara": "curioso"},
+    {"e": "Escondido. Detrás de cinco pantallas y una encuesta.", "tarjeta": {"icono": "movil", "texto": "CANCELAR"}},
+    {"r": "Entonces gratis no era.", "cara": "pensativo"},
+    {"e": "Gratis era el primer mes. Y el mes en que te olvidaste.", "cara": "resignado"},
+    {"pausa": 1.3, "reaccion": "mirada", "caras": {"e": "serio", "r": "resignado"}}
+  ]
+}

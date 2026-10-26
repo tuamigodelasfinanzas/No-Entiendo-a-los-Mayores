@@ -1,0 +1,42 @@
+{
+  "id": "010-comprar-casa",
+  "idioma": "es",
+  "serie": "cuando-sea-mayor",
+  "pilar": "vida-adulta",
+  "tema": "comprar una vivienda",
+  "formato": "ambos-descubren",
+  "escenario": "dormitorio",
+  "roles": {
+    "pregunta": "r",
+    "explica": "e"
+  },
+  "titulo": "Cuando sea mayor me compraré una casa con piscina",
+  "cierre": {
+    "tipo": "texto",
+    "caras": {
+      "e": "asombrado",
+      "r": "serio"
+    }
+  },
+  "aprendizaje": "Para comprar una vivienda normalmente hay que ahorrar una entrada (a menudo alrededor del 20 % del precio) y pedir una hipoteca para el resto.",
+  "hashtags": [
+    "#vivienda",
+    "#ahorro",
+    "#casa"
+  ],
+  "lineas": [
+    {"e": "Cuando sea mayor me compraré una casa con piscina.", "cara": "ilusionado", "tarjeta": {"icono": "casa", "texto": "CON PISCINA"}},
+    {"r": "¿Con qué dinero?", "cara": "dudoso"},
+    {"e": "Ahorrando lo que me sobre cada mes.", "tarjeta": {"icono": "hucha"}},
+    {"r": "¿Y cuánto te sobra ahora?"},
+    {"e": "Tres euros de la paga.", "cara": "sonrisa"},
+    {"r": "Pues necesitas... unos cien mil años.", "cara": "pensativo", "emote": "..."},
+    {"e": "Vale. Sin piscina.", "cara": "resignado"},
+    {"r": "Siguen siendo muchos años."},
+    {"e": "¿Y sin jardín?"},
+    {"r": "Muchos años.", "cara": "serio"},
+    {"e": "¿Y si es muy muy pequeñita?", "cara": "curioso"},
+    {"r": "Eso se llama habitación. Y ya tienes una.", "cara": "serio"},
+    {"pausa": 1.3, "reaccion": "giro", "caras": {"e": "asombrado", "r": "serio"}}
+  ]
+}

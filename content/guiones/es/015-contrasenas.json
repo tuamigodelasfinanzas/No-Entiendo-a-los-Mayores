@@ -1,0 +1,38 @@
+{
+  "id": "015-contrasenas",
+  "idioma": "es",
+  "serie": "quien-invento",
+  "pilar": "tecnologia",
+  "tema": "contraseñas",
+  "formato": "mini-historia",
+  "escenario": "dormitorio",
+  "roles": {
+    "pregunta": "r",
+    "explica": "e"
+  },
+  "titulo": "¿Quién inventó las contraseñas?",
+  "cierre": {
+    "tipo": "hablado"
+  },
+  "aprendizaje": "Una buena contraseña es larga y única para cada sitio; un gestor de contraseñas las recuerda por ti y es más seguro que un papel.",
+  "hashtags": [
+    "#contraseñas",
+    "#seguridad",
+    "#internet"
+  ],
+  "lineas": [
+    {"r": "¿Quién inventó las contraseñas?", "tarjeta": {"icono": "candado", "texto": "CONTRASEÑA"}},
+    {"e": "Alguien que no quería que entraran en sus cosas."},
+    {"r": "¿Y funcionó?"},
+    {"e": "Tan bien que ya no puede entrar ni él.", "cara": "serio"},
+    {"e": "Le piden una mayúscula, un número y un símbolo raro.", "tarjeta": {"icono": "candado", "texto": "Ab3#!"}},
+    {"r": "¿Y un dibujo de un dinosaurio?", "cara": "picaro"},
+    {"e": "Casi. Y cambiarla cada tres meses."},
+    {"r": "¿Y cómo se acuerdan?"},
+    {"e": "La apuntan en un papel pegado a la pantalla.", "gesto": "asiente"},
+    {"r": "Entonces, ¿para qué sirve la contraseña?", "cara": "dudoso", "emote": "?"},
+    {"e": "Para darle a: «he olvidado mi contraseña».", "cara": "resignado"},
+    {"pausa": 1.0, "reaccion": "silencio"},
+    {"ambos": "Cosas de mayores."}
+  ]
+}

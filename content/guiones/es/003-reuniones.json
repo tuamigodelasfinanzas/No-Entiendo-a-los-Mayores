@@ -1,0 +1,38 @@
+{
+  "id": "003-reuniones",
+  "idioma": "es",
+  "serie": "quien-invento",
+  "pilar": "trabajo",
+  "tema": "reuniones",
+  "formato": "mini-historia",
+  "escenario": "cole",
+  "roles": {
+    "pregunta": "r",
+    "explica": "e"
+  },
+  "titulo": "¿Quién inventó las reuniones?",
+  "cierre": {
+    "tipo": "hablado"
+  },
+  "aprendizaje": "Una reunión es útil cuando hay que decidir algo entre varias personas. Si solo hay que informar, muchas veces basta con un mensaje.",
+  "hashtags": [
+    "#trabajo",
+    "#reuniones",
+    "#oficina"
+  ],
+  "lineas": [
+    {"r": "¿Quién inventó las reuniones?"},
+    {"e": "Alguien que tenía algo importante que decir.", "tarjeta": {"icono": "reunion", "texto": "REUNIÓN"}},
+    {"r": "¿Y no podía decirlo y ya?", "cara": "dudoso"},
+    {"e": "No. Primero hay que buscar una hora que vaya bien a todos."},
+    {"r": "¿Y cuánto se tarda en eso?"},
+    {"e": "Una semana.", "cara": "serio", "tarjeta": {"icono": "calendario", "texto": "1 SEMANA"}},
+    {"r": "¿Y luego lo dice?"},
+    {"e": "Luego cada uno dice lo que ya sabía."},
+    {"r": "¿Y cómo termina?", "cara": "curioso"},
+    {"e": "Con otra reunión.", "cara": "serio", "gesto": "asiente"},
+    {"pausa": 1.0, "reaccion": "silencio", "caras": {"r": "resignado"}},
+    {"r": "Mi padre dice que casi todas podrían ser un mensaje."},
+    {"e": "Cosas de mayores, Rubén.", "cara": "resignado"}
+  ]
+}

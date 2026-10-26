@@ -1,0 +1,42 @@
+{
+  "id": "008-cookies",
+  "idioma": "es",
+  "serie": "diccionario",
+  "pilar": "tecnologia",
+  "tema": "cookies",
+  "formato": "malentendido",
+  "escenario": "cocina",
+  "roles": {
+    "pregunta": "e",
+    "explica": "r"
+  },
+  "titulo": "¿Qué son las cookies?",
+  "cierre": {
+    "tipo": "reaccion",
+    "caras": {
+      "e": "serio",
+      "r": "serio"
+    }
+  },
+  "aprendizaje": "Las cookies son pequeños archivos que guardan las webs en tu navegador para recordarte; algunas sirven para mostrarte publicidad. Puedes rechazarlas.",
+  "hashtags": [
+    "#cookies",
+    "#internet",
+    "#privacidad"
+  ],
+  "lineas": [
+    {"e": "Rubén, ¿qué son las cookies?", "cara": "curioso"},
+    {"r": "En inglés, galletas.", "cara": "convencido", "tarjeta": {"icono": "galleta", "texto": "COOKIES"}},
+    {"e": "¡Pues mi padre las acepta en todas las páginas!", "cara": "feliz", "gesto": "salto"},
+    {"r": "Esas no se comen. Son de internet.", "cara": "serio"},
+    {"e": "¿Y qué hacen?"},
+    {"r": "Recuerdan lo que miras para enseñarte anuncios."},
+    {"e": "¿Como un espía?", "cara": "sorprendido", "emote": "!"},
+    {"r": "Un espía que antes te pide permiso.", "gesto": "asiente"},
+    {"e": "¿Y por qué mi padre le dice que sí?", "cara": "dudoso"},
+    {"r": "Porque el botón de «no» está escondido."},
+    {"e": "Entonces no son galletas.", "cara": "pensativo"},
+    {"r": "No. Pero se aceptan igual de rápido.", "cara": "picaro"},
+    {"pausa": 1.2, "reaccion": "mirada", "caras": {"e": "pensativo", "r": "serio"}}
+  ]
+}

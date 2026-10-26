@@ -1,0 +1,39 @@
+{
+  "id": "021-cafe",
+  "idioma": "es",
+  "serie": "por-que",
+  "pilar": "contradicciones",
+  "tema": "café porque estás cansado",
+  "formato": "deduccion-logica",
+  "escenario": "cocina",
+  "roles": {
+    "pregunta": "r",
+    "explica": "e"
+  },
+  "titulo": "¿Por qué los mayores toman tanto café?",
+  "cierre": {
+    "tipo": "hablado"
+  },
+  "aprendizaje": "La cafeína tarda horas en desaparecer del cuerpo: un café por la tarde puede empeorar el sueño de la noche, y la pantalla antes de dormir también.",
+  "hashtags": [
+    "#cafe",
+    "#dormir",
+    "#cansancio"
+  ],
+  "lineas": [
+    {"r": "¿Por qué mi padre toma tanto café?", "tarjeta": {"icono": "cafe", "texto": "CAFÉ"}},
+    {"e": "Porque está cansado."},
+    {"r": "¿Y por qué está cansado?"},
+    {"e": "Porque duerme mal."},
+    {"r": "¿Y por qué duerme mal?", "cara": "dudoso"},
+    {"e": "Porque toma mucho café.", "gesto": "asiente"},
+    {"r": "Entonces, que no tome café.", "cara": "ilusionado", "emote": "bombilla"},
+    {"e": "Entonces estaría cansado.", "cara": "serio"},
+    {"r": "¿Y si se va a dormir antes?"},
+    {"e": "No puede. Antes tiene que mirar el móvil un rato."},
+    {"r": "¿Para qué?", "cara": "curioso"},
+    {"e": "Para relajarse de lo cansado que está."},
+    {"pausa": 1.0, "reaccion": "silencio", "caras": {"r": "confundido"}},
+    {"ambos": "Cosas de mayores."}
+  ]
+}

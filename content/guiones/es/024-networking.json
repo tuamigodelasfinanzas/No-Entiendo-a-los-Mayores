@@ -1,0 +1,39 @@
+{
+  "id": "024-networking",
+  "idioma": "es",
+  "serie": "diccionario",
+  "pilar": "trabajo",
+  "tema": "networking",
+  "formato": "definicion-absurda",
+  "escenario": "cole",
+  "roles": {
+    "pregunta": "r",
+    "explica": "e"
+  },
+  "titulo": "¿Qué es el networking?",
+  "cierre": {
+    "tipo": "texto",
+    "caras": {
+      "r": "sorprendido",
+      "e": "serio"
+    }
+  },
+  "aprendizaje": "El networking es crear y cuidar una red de contactos profesionales; funciona mejor cuando hay interés real por las personas, no solo intercambio de tarjetas.",
+  "hashtags": [
+    "#networking",
+    "#trabajo",
+    "#amigos"
+  ],
+  "lineas": [
+    {"r": "¿Qué es el networking?"},
+    {"e": "Es hacer amigos... pero por trabajo.", "tarjeta": {"icono": "reunion", "texto": "NETWORKING"}},
+    {"r": "¿Y juegas con ellos?", "cara": "ilusionado"},
+    {"e": "No. Os dais tarjetas con vuestro nombre. Y las guardáis en un cajón.", "cara": "serio", "gesto": "asiente"},
+    {"r": "¿Y ya sois amigos?", "cara": "dudoso"},
+    {"e": "Sois contactos. Que es distinto."},
+    {"e": "Un amigo te ayuda con la mudanza. Un contacto te da un me gusta.", "tarjeta": {"icono": "like", "texto": "ME GUSTA"}},
+    {"r": "Entonces yo hago mucho networking en el recreo.", "cara": "convencido", "gesto": "asiente"},
+    {"e": "No. Tú tienes amigos. Eso ya casi no se lleva.", "cara": "resignado"},
+    {"pausa": 1.3, "reaccion": "giro", "caras": {"r": "sorprendido", "e": "serio"}}
+  ]
+}

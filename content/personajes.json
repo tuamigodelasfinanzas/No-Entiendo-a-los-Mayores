@@ -1,0 +1,35 @@
+{
+  "_doc": "Ficha técnica de los personajes (la biblia completa está en docs/biblia-personajes.md). El director (src/director.mjs) lee de aquí nombres, colores, posición en pantalla y caras por defecto; las voces están en src/voice.mjs.",
+  "e": {
+    "nombre": {
+      "es": "Edu"
+    },
+    "letra": "E",
+    "color": "#D7322E",
+    "rol_habitual": "explica",
+    "x": 280,
+    "cara_habla": "convencido",
+    "cara_escucha": "sonrisa",
+    "mira_al_otro": [
+      0.55,
+      0
+    ]
+  },
+  "r": {
+    "nombre": {
+      "es": "Rubén"
+    },
+    "letra": "R",
+    "color": "#1F6FE0",
+    "rol_habitual": "pregunta",
+    "x": 800,
+    "cara_habla": "curioso",
+    "cara_escucha": "neutral",
+    "mira_al_otro": [
+      -0.55,
+      0
+    ]
+  },
+  "suelo": 1900,
+  "escala": 1.15
+}

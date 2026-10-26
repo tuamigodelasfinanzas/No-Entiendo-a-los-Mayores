@@ -1,0 +1,42 @@
+{
+  "id": "006-tenemos-que-quedar",
+  "idioma": "es",
+  "serie": "manual",
+  "pilar": "relaciones",
+  "tema": "tenemos que quedar",
+  "formato": "instrucciones",
+  "escenario": "calle",
+  "roles": {
+    "pregunta": "r",
+    "explica": "e"
+  },
+  "titulo": "Manual para ser adulto: cómo (no) quedar con un amigo",
+  "cierre": {
+    "tipo": "texto",
+    "caras": {
+      "e": "serio",
+      "r": "confundido"
+    }
+  },
+  "aprendizaje": "Decir «tenemos que quedar» sin fecha es una forma amable de mantener el contacto; si de verdad quieres ver a alguien, propón un día concreto.",
+  "hashtags": [
+    "#amigos",
+    "#quedar",
+    "#humor"
+  ],
+  "lineas": [
+    {"e": "Manual para ser adulto. Lección uno: cómo quedar con un amigo."},
+    {"r": "Fácil. Le dices: ¿quedamos el sábado?", "cara": "sonrisa"},
+    {"e": "Error. Se dice: a ver si quedamos un día.", "gesto": "niega"},
+    {"r": "¿Qué día?", "cara": "curioso"},
+    {"e": "Ninguno. Eso es lo importante.", "cara": "serio"},
+    {"r": "¿Y qué contesta el amigo?"},
+    {"e": "¡Sí, sí, tenemos que quedar!", "cara": "feliz"},
+    {"r": "¿Y entonces quedáis?"},
+    {"e": "No. Repetís la frase durante tres años.", "tarjeta": {"icono": "calendario", "texto": "3 AÑOS"}},
+    {"r": "¿Y si un día se encuentran por la calle?"},
+    {"e": "Se dicen: ¡a ver si quedamos!", "gesto": "asiente"},
+    {"r": "¡Pero si ya se han encontrado!", "cara": "sorprendido", "emote": "!"},
+    {"pausa": 1.3, "reaccion": "mirada", "caras": {"e": "serio", "r": "confundido"}}
+  ]
+}

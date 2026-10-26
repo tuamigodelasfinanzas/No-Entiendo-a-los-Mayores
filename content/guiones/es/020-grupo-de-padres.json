@@ -1,0 +1,41 @@
+{
+  "id": "020-grupo-de-padres",
+  "idioma": "es",
+  "serie": "manual",
+  "pilar": "relaciones",
+  "tema": "grupos de WhatsApp",
+  "formato": "instrucciones",
+  "escenario": "salon",
+  "roles": {
+    "pregunta": "r",
+    "explica": "e"
+  },
+  "titulo": "Manual para ser adulto: el grupo de padres",
+  "cierre": {
+    "tipo": "texto",
+    "caras": {
+      "r": "asombrado",
+      "e": "serio"
+    }
+  },
+  "aprendizaje": "En un grupo grande, la información importante se pierde entre mensajes: fijar el mensaje clave o preguntar en privado a quien organiza suele ser más rápido.",
+  "hashtags": [
+    "#whatsapp",
+    "#padres",
+    "#cole"
+  ],
+  "lineas": [
+    {"e": "Manual para ser adulto. Lección tres: el grupo de padres del cole.", "tarjeta": {"icono": "mensaje", "texto": "GRUPO DE PADRES"}},
+    {"r": "¿Para qué sirve?"},
+    {"e": "Para preguntar a qué hora es la excursión."},
+    {"r": "¿Y cuántos mensajes hacen falta?"},
+    {"e": "Ciento cuarenta y siete.", "cara": "serio", "tarjeta": {"icono": "mensaje", "texto": "147"}},
+    {"r": "¿Para una hora?", "cara": "asombrado", "emote": "!"},
+    {"e": "Uno pregunta. Y veinte escriben: yo también quiero saberlo."},
+    {"r": "¿Y quién responde?", "cara": "curioso"},
+    {"e": "Nadie. Pero alguien manda un audio de cuatro minutos.", "gesto": "asiente"},
+    {"r": "¿Y al final a qué hora es?"},
+    {"e": "Ya da igual. Era ayer.", "cara": "resignado"},
+    {"pausa": 1.3, "reaccion": "parpadeo", "caras": {"r": "asombrado", "e": "serio"}}
+  ]
+}

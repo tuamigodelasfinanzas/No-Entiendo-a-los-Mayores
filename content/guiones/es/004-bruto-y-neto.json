@@ -1,0 +1,40 @@
+{
+  "id": "004-bruto-y-neto",
+  "idioma": "es",
+  "serie": "cuando-sea-mayor",
+  "pilar": "dinero",
+  "tema": "salario bruto y neto",
+  "formato": "malentendido",
+  "escenario": "dormitorio",
+  "roles": {
+    "pregunta": "r",
+    "explica": "e"
+  },
+  "titulo": "Cuando sea mayor ganaré 2.000 euros... ¿brutos?",
+  "cierre": {
+    "tipo": "reaccion",
+    "caras": {
+      "e": "asombrado",
+      "r": "serio"
+    }
+  },
+  "aprendizaje": "El salario bruto es lo que cobras antes de impuestos y cotizaciones; el neto es lo que llega de verdad a tu cuenta.",
+  "hashtags": [
+    "#sueldo",
+    "#salario",
+    "#finanzaspersonales"
+  ],
+  "lineas": [
+    {"e": "Cuando sea mayor voy a ganar dos mil euros al mes.", "cara": "ilusionado", "tarjeta": {"icono": "billetes", "texto": "2.000 €"}},
+    {"r": "¿Brutos o netos?", "cara": "serio"},
+    {"e": "¿Eso qué es?", "cara": "confundido", "emote": "?"},
+    {"r": "Brutos es lo que ganas. Netos es lo que te llega."},
+    {"e": "¿Y por qué no me llega todo?", "cara": "sorprendido"},
+    {"r": "Porque una parte se la quedan los impuestos."},
+    {"e": "¿Y por qué siempre me dicen la cifra grande?", "tarjeta": {"icono": "factura", "texto": "BRUTO - NETO"}},
+    {"r": "Porque la pequeña da pena.", "cara": "serio"},
+    {"e": "Pues yo quiero dos mil euros... netos.", "cara": "convencido", "gesto": "asiente"},
+    {"r": "Entonces tendrás que pedir bastantes más brutos."},
+    {"pausa": 1.3, "reaccion": "mirada", "caras": {"e": "asombrado", "r": "serio"}}
+  ]
+}

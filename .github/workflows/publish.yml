@@ -1,0 +1,179 @@
+name: Publish
+
+# Two videos a day (content/calendario.json: A 13:30 and B 20:30, Madrid time).
+# About 40 minutes before each slot GitHub starts this workflow (two crons per slot: summer and winter time; the
+# one that does not match the Madrid hour exits at once). It renders the next script, puts the video on GitHub
+# Pages, waits until the exact time and calls the Make webhook, which publishes it as an Instagram Reel, a Facebook
+# Reel and a YouTube Short (docs/publicacion.md). The same payload as Planet in Numbers.
+#
+# Safety: NOTHING is published unless the repo variable PUBLICAR is "si" AND content/calendario.json has a start
+# date ("inicio"). Otherwise it is a dry run: it renders and sends the video to Telegram as a preview.
+# By hand (Actions > Publish > Run workflow): choose slot / script; dry_run defaults to true.
+on:
+  schedule:
+    # A 13:30 Madrid -> start 12:50: 10:50 UTC in summer (CEST), 11:50 UTC in winter (CET)
+    - cron: "50 10 * * *"
+    - cron: "50 11 * * *"
+    # B 20:30 Madrid -> start 19:50: 17:50 UTC in summer, 18:50 UTC in winter
+    - cron: "50 17 * * *"
+    - cron: "50 18 * * *"
+  workflow_dispatch:
+    inputs:
+      slot:
+        description: "Slot: A (13:30) or B (20:30)"
+        required: true
+        default: "A"
+      guion:
+        description: "Optional: force a script id (e.g. 007). Empty = the next one not yet published"
+        required: false
+        default: ""
+      dry_run:
+        description: "true = render and send to Telegram only. false = publish (also needs PUBLICAR = si)"
+        required: false
+        default: "true"
+      now:
+        description: "true = do not wait for the slot time"
+        required: false
+        default: "false"
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    env:
+      MAKE_WEBHOOK_URL: ${{ secrets.MAKE_WEBHOOK_URL }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Which slot (cron) and publish or dry run
+        id: mode
+        run: |
+          set -euo pipefail
+          SLOT="${{ inputs.slot }}"
+          if [ "${{ github.event_name }}" = schedule ]; then
+            # keep the cron only if a slot is 5-70 min away in Madrid time (GitHub may start crons late; the cron of
+            # the other time of year lands 100 min before or after the slot and exits here)
+            NOW=$(( 10#$(TZ=Europe/Madrid date +%H) * 60 + 10#$(TZ=Europe/Madrid date +%M) ))
+            SLOT=""
+            for S in $(jq -r '.franjas | to_entries[] | "\(.key)=\(.value)"' content/calendario.json); do
+              HM=${S#*=}; M=$(( 10#${HM%:*} * 60 + 10#${HM#*:} ))
+              [ $((M - NOW)) -ge 5 ] && [ $((M - NOW)) -le 70 ] && SLOT=${S%%=*}
+            done
+            if [ -z "$SLOT" ]; then echo "::notice::No slot 5-70 min away (Madrid $(TZ=Europe/Madrid date +%H:%M)): the other time zone's cron, nothing to do"; echo "skip=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          fi
+          DRY=true
+          if [ "${{ vars.PUBLICAR }}" = si ] && { [ "${{ github.event_name }}" = schedule ] || [ "${{ inputs.dry_run }}" = false ]; }; then DRY=false; fi
+          echo "slot=$SLOT" >> "$GITHUB_OUTPUT"; echo "dry=$DRY" >> "$GITHUB_OUTPUT"
+          echo "::notice::Slot $SLOT · $([ $DRY = true ] && echo 'DRY RUN (no se publica)' || echo 'PUBLICA')"
+
+      - name: Get site branch (media + memory of what was published)
+        if: steps.mode.outputs.skip != 'true'
+        run: |
+          git config --global user.name "nealm-bot"; git config --global user.email "nealm-bot@users.noreply.github.com"
+          REMOTE="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          if git ls-remote --exit-code --heads "$REMOTE" gh-pages >/dev/null 2>&1; then git clone -q --depth 1 --branch gh-pages "$REMOTE" site
+          else mkdir site && cd site && git init -q -b gh-pages && git remote add origin "$REMOTE" && touch .nojekyll && cd ..; fi
+          mkdir -p site/state site/media
+          [ -f site/state/published.json ] || echo '{}' > site/state/published.json
+          curl -sS -o /dev/null -X POST -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/pages" -d '{"source":{"branch":"gh-pages","path":"/"}}' || true
+
+      - name: What goes out
+        if: steps.mode.outputs.skip != 'true'
+        id: what
+        run: |
+          P=$(node src/plan.mjs site/state/published.json "${{ steps.mode.outputs.slot }}" "${{ inputs.guion }}")
+          echo "$P"
+          if echo "$P" | jq -e .skip >/dev/null; then echo "::notice::$(echo "$P" | jq -r .skip)"; echo "skip=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          for k in id file at date left; do echo "$k=$(echo "$P" | jq -r .$k)" >> "$GITHUB_OUTPUT"; done
+
+      - uses: actions/setup-node@v4
+        if: steps.mode.outputs.skip != 'true' && steps.what.outputs.skip != 'true'
+        with:
+          node-version: 22
+
+      - name: Install
+        if: steps.mode.outputs.skip != 'true' && steps.what.outputs.skip != 'true'
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+          sudo apt-get install -y -qq ffmpeg >/dev/null
+          pip install -q edge-tts numpy
+
+      - name: Validate and render
+        if: steps.mode.outputs.skip != 'true' && steps.what.outputs.skip != 'true'
+        id: render
+        run: |
+          set -euo pipefail
+          node tools/validate.mjs "${{ steps.what.outputs.file }}"
+          node src/render.mjs "${{ steps.what.outputs.file }}" out
+          DIR="${{ steps.what.outputs.date }}-${{ steps.mode.outputs.slot }}-${{ steps.what.outputs.id }}"
+          [ "${{ steps.mode.outputs.dry }}" = true ] && DIR="preview-$DIR"
+          mkdir -p "site/media/$DIR"
+          cp out/short.mp4 out/cover.jpg out/post.json out/timing.json "site/media/$DIR/"
+          echo "dir=$DIR" >> "$GITHUB_OUTPUT"
+
+      - name: Upload media to GitHub Pages
+        if: steps.mode.outputs.skip != 'true' && steps.what.outputs.skip != 'true'
+        id: up
+        run: |
+          set -euo pipefail
+          ls -1dt site/media/*/ | tail -n +31 | xargs -r rm -rf
+          cd site && git add -A && { git diff --cached --quiet || git commit -q -m "Media ${{ steps.render.outputs.dir }}"; }
+          for i in 1 2 3 4 5; do git push -q origin gh-pages && break || { git pull -q --rebase origin gh-pages; sleep $((i * 3)); }; done
+          BASE="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/media/${{ steps.render.outputs.dir }}"
+          echo "base=$BASE" >> "$GITHUB_OUTPUT"
+          for i in $(seq 1 60); do
+            CODE=$(curl -s -o /dev/null -w '%{http_code}' -I "$BASE/short.mp4" || true); [ "$CODE" = 200 ] && exit 0
+            echo "waiting for Pages ($i): $CODE"; sleep 15
+          done
+          echo "::error::Video not on GitHub Pages after 15 min ($BASE/short.mp4): Make could not download it"; exit 1
+
+      - name: Wait for the slot time
+        if: steps.mode.outputs.skip != 'true' && steps.what.outputs.skip != 'true' && steps.mode.outputs.dry == 'false' && inputs.now != 'true'
+        run: |
+          T=$(date -u -d "${{ steps.what.outputs.at }}" +%s); N=$(date -u +%s)
+          if [ $((T - N)) -gt 0 ] && [ $((T - N)) -lt 3600 ]; then echo "Waiting $((T - N)) s until ${{ steps.what.outputs.at }}"; sleep $((T - N)); fi
+
+      - name: Publish (Make → Instagram + Facebook, then YouTube)
+        if: steps.mode.outputs.skip != 'true' && steps.what.outputs.skip != 'true' && steps.mode.outputs.dry == 'false'
+        run: |
+          set -euo pipefail
+          [ -n "$MAKE_WEBHOOK_URL" ] || { echo "::error::Missing secret MAKE_WEBHOOK_URL"; exit 1; }
+          BASE="${{ steps.up.outputs.base }}"
+          jq -n --arg url "$BASE/short.mp4" --arg cover "$BASE/cover.jpg" --slurpfile p out/post.json \
+            '{status:"reel", channel:"noentiendoalosmayores", video_url:$url, cover_url:$cover, cover_ms:$p[0].cover_ms, caption:$p[0].caption, title:$p[0].title}' > reel.json
+          jq -n --arg url "$BASE/short.mp4" --slurpfile p out/post.json \
+            '{status:"youtube", channel:"noentiendoalosmayores", video_url:$url, title:$p[0].youtube.title, caption:$p[0].youtube.description, tags:$p[0].youtube.tags, cover_ms:0}' > yt.json
+          jq 'del(.caption)' reel.json
+          curl -sS --fail -X POST -H 'Content-Type: application/json' --data @reel.json "$MAKE_WEBHOOK_URL"
+          sleep 20
+          curl -sS --fail -X POST -H 'Content-Type: application/json' --data @yt.json "$MAKE_WEBHOOK_URL" || echo "::warning::YouTube payload not accepted by Make"
+          # remember it (the next run takes the next script)
+          cd site && jq --arg k "${{ steps.what.outputs.id }}" --arg d "${{ steps.what.outputs.date }}" --arg s "${{ steps.mode.outputs.slot }}" --arg m "${{ steps.render.outputs.dir }}" \
+            '.[$k] = {date:$d, slot:$s, media:$m}' state/published.json > s.tmp && mv s.tmp state/published.json
+          git add -A && git commit -q -m "Published ${{ steps.what.outputs.id }}"
+          for i in 1 2 3 4 5; do git push -q origin gh-pages && break || { git pull -q --rebase origin gh-pages; sleep $((i * 3)); }; done
+          echo "::notice::Published ${{ steps.what.outputs.id }} (${{ steps.what.outputs.left }} scripts left)"
+          [ "${{ steps.what.outputs.left }}" -le 6 ] && echo "::warning::Only ${{ steps.what.outputs.left }} scripts left: write more in content/guiones/" || true
+
+      - name: Send to Telegram (preview / for TikTok)
+        if: steps.mode.outputs.skip != 'true' && steps.what.outputs.skip != 'true'
+        continue-on-error: true
+        run: node src/telegram.mjs out "${{ steps.mode.outputs.dry == 'true' && 'PREVIEW, no publicado' || 'publicado' }}"
+
+      - name: Tell Make if it failed
+        if: failure() && steps.mode.outputs.dry == 'false'
+        run: |
+          [ -n "$MAKE_WEBHOOK_URL" ] && curl -sS -X POST -H 'Content-Type: application/json' \
+            -d '{"status":"error","channel":"noentiendoalosmayores","run_url":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}' "$MAKE_WEBHOOK_URL" || true

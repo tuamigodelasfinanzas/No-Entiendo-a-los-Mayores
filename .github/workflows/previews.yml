@@ -1,0 +1,97 @@
+name: Previews
+
+# Checks the scripts and renders previews WITH VOICE, without publishing anything:
+#   - on every pull request and push to main that touches scripts, code or assets: the first three episodes
+#     of the calendar (or the scripts the PR changes, up to three)
+#   - by hand (Actions > Previews > Run workflow): the ids you write, e.g. "001,011,029"
+# Result: an artifact "previews" with each short.mp4, its cover, the start / middle / end frames, a contact sheet,
+# timing.json and post.json, plus a summary on the run page with the real durations.
+on:
+  pull_request:
+    paths: ['content/**', 'src/**', 'assets/**', 'tools/**', '.github/workflows/previews.yml']
+  push:
+    branches: [main]
+    paths: ['content/**', 'src/**', 'assets/**', 'tools/**']
+  workflow_dispatch:
+    inputs:
+      ids:
+        description: "Script ids, comma-separated (e.g. 001,011,029). Empty = the first three"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: previews-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  previews:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+          sudo apt-get install -y -qq ffmpeg >/dev/null
+          pip install -q edge-tts numpy
+
+      - name: Validate scripts and calendar
+        run: node tools/validate.mjs | tee validate.txt
+
+      - name: Which scripts
+        id: which
+        env:
+          IDS: ${{ inputs.ids }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          if [ -n "${IDS:-}" ]; then
+            FILES=$(for i in ${IDS//,/ }; do ls content/guiones/es/${i}*.json; done)
+          else
+            CHANGED=""
+            [ -n "${BASE:-}" ] && CHANGED=$(git diff --name-only "$BASE" HEAD -- 'content/guiones/*/*.json' | head -3 || true)
+            FILES=${CHANGED:-$(ls content/guiones/es/*.json | head -3)}
+          fi
+          echo "files=$(echo $FILES)" >> "$GITHUB_OUTPUT"
+          echo "Previews: $FILES"
+
+      - name: Render (voice, 30 fps)
+        env:
+          CDM_FRAMES: "0.4,50%,-0.4"
+        run: |
+          set -euo pipefail
+          for f in ${{ steps.which.outputs.files }}; do
+            ID=$(basename "$f" .json)
+            node src/render.mjs "$f" "out/$ID"
+            ffmpeg -y -v error -i "out/$ID/frame-inicio.jpg" -i "out/$ID/frame-centro.jpg" -i "out/$ID/frame-final.jpg" \
+              -filter_complex "[0][1][2]hstack=3,scale=1620:-1" "out/$ID/hoja.jpg"
+            rm -rf "out/$ID/work"
+          done
+          node tools/validate.mjs --timing out/*/timing.json | tee durations.txt
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## Previews (no se ha publicado nada)"
+            echo; echo '```'; cat durations.txt 2>/dev/null || true; echo '```'
+            echo; echo "<details><summary>Validación</summary>"; echo; echo '```'; cat validate.txt 2>/dev/null || true; echo '```'; echo "</details>"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: previews
+          path: out/
+          retention-days: 14

@@ -1,0 +1,39 @@
+{
+  "id": "017-la-nube",
+  "idioma": "es",
+  "serie": "ocho-anos",
+  "pilar": "tecnologia",
+  "tema": "la nube",
+  "formato": "malentendido",
+  "escenario": "parque",
+  "roles": {
+    "pregunta": "r",
+    "explica": "e"
+  },
+  "titulo": "¿Dónde está «la nube»?",
+  "cierre": {
+    "tipo": "hablado"
+  },
+  "aprendizaje": "«La nube» son servidores de empresas que guardan tus archivos en centros de datos; puedes verlos desde cualquier sitio, normalmente pagando una cuota.",
+  "hashtags": [
+    "#lanube",
+    "#tecnologia",
+    "#fotos"
+  ],
+  "lineas": [
+    {"r": "Mi madre dice que sus fotos están en la nube.", "mira": "arriba", "tarjeta": {"icono": "nube", "texto": "LA NUBE"}},
+    {"e": "Sí. Arriba del todo.", "mira": "arriba"},
+    {"r": "¿Y cuando llueve?", "cara": "asombrado", "emote": "gota"},
+    {"e": "Se mojan un poco.", "cara": "serio"},
+    {"r": "¿En serio?", "cara": "sorprendido"},
+    {"e": "No. La nube es un almacén lleno de máquinas, muy lejos."},
+    {"r": "¿Y quién paga el almacén?", "cara": "dudoso"},
+    {"e": "Tu madre. Todos los meses.", "tarjeta": {"icono": "factura", "texto": "2,99 €/MES"}},
+    {"r": "¿Para guardar fotos que nunca mira?"},
+    {"e": "Por si algún día las mira.", "gesto": "asiente"},
+    {"r": "¿Y las mira?", "cara": "curioso"},
+    {"e": "Nunca. Pero paga por si acaso."},
+    {"pausa": 1.0, "reaccion": "silencio"},
+    {"ambos": "Cosas de mayores."}
+  ]
+}

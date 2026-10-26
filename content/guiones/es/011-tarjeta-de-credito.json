@@ -1,0 +1,39 @@
+{
+  "id": "011-tarjeta-de-credito",
+  "idioma": "es",
+  "serie": "ocho-anos",
+  "pilar": "dinero",
+  "tema": "tarjeta de crédito",
+  "formato": "pregunta-respuesta",
+  "escenario": "salon",
+  "roles": {
+    "pregunta": "r",
+    "explica": "e"
+  },
+  "titulo": "Si no tienes dinero, ¿por qué lo compras?",
+  "cierre": {
+    "tipo": "hablado"
+  },
+  "aprendizaje": "Una tarjeta de crédito te adelanta el dinero; si no lo devuelves a tiempo, pagas intereses, y la deuda crece cada mes.",
+  "hashtags": [
+    "#tarjetadecredito",
+    "#deudas",
+    "#finanzaspersonales"
+  ],
+  "lineas": [
+    {"r": "Pero si no tienes dinero, ¿por qué lo compras?", "cara": "dudoso"},
+    {"e": "Lo pagas con la tarjeta.", "tarjeta": {"icono": "tarjeta", "texto": "TARJETA"}},
+    {"r": "¿Y quién paga la tarjeta?"},
+    {"e": "Tú. Pero el mes que viene.", "cara": "sonrisa"},
+    {"r": "¿Y el mes que viene tendrás dinero?", "cara": "curioso"},
+    {"e": "No. Pero volveré a tener la tarjeta.", "cara": "feliz"},
+    {"r": "Explícamelo como si tuviera ocho años.", "cara": "confundido", "emote": "?"},
+    {"e": "Es como pedir prestado un caramelo."},
+    {"r": "¿Y luego devuelves uno?"},
+    {"e": "Devuelves uno y un trocito.", "tarjeta": {"icono": "grafica", "texto": "INTERESES"}},
+    {"r": "¿Y si no lo devuelves?"},
+    {"e": "Al mes siguiente devuelves dos trocitos.", "cara": "serio"},
+    {"pausa": 1.0, "reaccion": "silencio", "caras": {"r": "asombrado"}},
+    {"ambos": "Cosas de mayores."}
+  ]
+}

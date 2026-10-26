@@ -1,0 +1,42 @@
+{
+  "id": "016-vacaciones",
+  "idioma": "es",
+  "serie": "por-que",
+  "pilar": "trabajo",
+  "tema": "vacaciones",
+  "formato": "pregunta-respuesta",
+  "escenario": "parque",
+  "roles": {
+    "pregunta": "r",
+    "explica": "e"
+  },
+  "titulo": "¿Por qué trabajan todo el año para irse unos días?",
+  "cierre": {
+    "tipo": "texto",
+    "caras": {
+      "r": "pensativo",
+      "e": "serio"
+    }
+  },
+  "aprendizaje": "En España, quien trabaja a tiempo completo tiene al menos 30 días naturales de vacaciones pagadas al año.",
+  "hashtags": [
+    "#vacaciones",
+    "#trabajo",
+    "#verano"
+  ],
+  "lineas": [
+    {"r": "¿Por qué los mayores trabajan todo el año?"},
+    {"e": "Para poder irse de vacaciones.", "tarjeta": {"icono": "maleta", "texto": "VACACIONES"}},
+    {"r": "¿Cuántos días?"},
+    {"e": "Unos quince. Si tienen suerte.", "tarjeta": {"icono": "calendario", "texto": "15 DÍAS"}},
+    {"r": "¿Y el resto del año?"},
+    {"e": "Piensan en las vacaciones.", "cara": "sonrisa"},
+    {"r": "¿Y durante las vacaciones?"},
+    {"e": "Piensan en que se acaban.", "cara": "triste"},
+    {"r": "¿Y cuando vuelven?", "cara": "curioso"},
+    {"e": "Dicen que necesitan vacaciones de las vacaciones.", "cara": "serio"},
+    {"r": "Nosotros tenemos casi tres meses en verano.", "cara": "ilusionado"},
+    {"e": "Ya. Y nos dicen que no sabemos la suerte que tenemos."},
+    {"pausa": 1.2, "reaccion": "mirada", "caras": {"r": "pensativo", "e": "serio"}}
+  ]
+}

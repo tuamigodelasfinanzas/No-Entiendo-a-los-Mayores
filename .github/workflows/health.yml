@@ -1,0 +1,28 @@
+name: Health check
+
+# Every morning: this channel's traffic light on Telegram, with the same shared logic as the other channels
+# (zero-understands/.github/workflows/health.yml). Read-only: it never renders or publishes.
+#   - Instagram token: only once publishing is on (repo variable PUBLICAR = si), so it is not red before launch
+#   - GitHub Pages and failed runs of this repo
+on:
+  schedule:
+    - cron: "54 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  health:
+    uses: tuamigodelasfinanzas/zero-understands/.github/workflows/health.yml@main
+    with:
+      label: No Entiendo a los Mayores
+      ig_check: ${{ vars.PUBLICAR == 'si' }}
+      pages_urls: ${{ vars.PUBLICAR == 'si' && 'https://tuamigodelasfinanzas.github.io/No-Entiendo-a-los-Mayores/state/published.json' || '' }}
+      runs_repos: tuamigodelasfinanzas/No-Entiendo-a-los-Mayores
+    secrets:
+      IG_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+      IG_USER: ${{ secrets.IG_USER_ID }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
