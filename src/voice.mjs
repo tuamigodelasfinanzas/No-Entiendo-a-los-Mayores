@@ -20,6 +20,17 @@ export const estimate = text => Math.max(0.7, String(text).split(/\s+/).filter(B
 
 const clean = t => String(t ?? '').replace(/\p{Extended_Pictographic}|\u{FE0F}|\u{200D}/gu, '').replace(/(\d)\s?%/g, '$1 por ciento').replace(/€/g, ' euros').replace(/\s+/g, ' ').trim();
 
+// edge-tts leaves ~0.1 s of silence before and ~0.6 s after every clip: over 10-12 lines that is several seconds
+// of dead air. Trim both ends (keeping a short tail so the last word is not clipped).
+export function trim(file) {
+  const tmp = file.replace(/\.mp3$/, '') + '.trim.mp3';
+  const sr = 'silenceremove=start_periods=1:start_threshold=-48dB:start_silence=0.04';
+  try {
+    execFileSync('ffmpeg', ['-y', '-v', 'error', '-i', file, '-af', `${sr},areverse,${sr.replace('0.04', '0.12')},areverse`, '-c:a', 'libmp3lame', '-q:a', '2', tmp], { stdio: 'pipe' });
+    if (probe(tmp) > 0.3) fs.renameSync(tmp, file); else fs.rmSync(tmp, { force: true });
+  } catch { fs.rmSync(tmp, { force: true }); }
+}
+
 export function tts(text, file, who, lang = 'es', overrides = {}) {
   const v = Object.assign({}, VOICES[lang]?.[who] || VOICES.es[who], overrides?.[who] || {});
   const tf = path.join(os.tmpdir(), `cdm-tts-${process.pid}-${Math.random().toString(36).slice(2)}.txt`);
@@ -30,7 +41,7 @@ export function tts(text, file, who, lang = 'es', overrides = {}) {
     try {
       fs.rmSync(file, { force: true });
       execFileSync('edge-tts', [...proxy, '--voice', v.voice, `--rate=${v.rate}`, `--pitch=${v.pitch}`, '--file', tf, '--write-media', file], { stdio: 'pipe' });
-      if (fs.existsSync(file) && fs.statSync(file).size > 1000) { fs.rmSync(tf, { force: true }); return probe(file); }
+      if (fs.existsSync(file) && fs.statSync(file).size > 1000) { fs.rmSync(tf, { force: true }); trim(file); return probe(file); }
     } catch (e) { err = String(e.stderr || e.message).slice(-200); }
   }
   fs.rmSync(tf, { force: true });

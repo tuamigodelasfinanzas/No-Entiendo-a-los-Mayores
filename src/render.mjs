@@ -44,6 +44,7 @@ for (const [i, b] of ep.beats.entries()) {
       } catch (e) { console.warn('::warning::voice failed, continuing without voice: ' + e.message); useVoice = false; clips.length = 0; d = estimate(ln.text); }
     }
     beat.lines.push({ who: ln.who, text: ln.text, start: t + lt, dur: d, words: wordTimes(ln.text, d) });
+    if (useVoice) console.log(`  ${ln.who.padEnd(5)} ${d.toFixed(2)} s (est. ${estimate(ln.text).toFixed(2)})  ${ln.text}`);
     lt += d + (ln.gap ?? 0.3);
   }
   const need = beat.lines.length ? lt - 0.3 + (b.hold ?? 0.55) : 0;
