@@ -4,6 +4,8 @@ Dos niños intentan entender el mundo de los adultos. No son más listos que los
 
 Los diseños son los de las hojas de Chiño (`assets/characters/source/`). `tools/prepare_characters.py` los convierte en las capas que se animan (`assets/characters/e|r/`).
 
+**Las caras son el dibujo, tal cual.** No se redibujan ojos, cejas ni boca. Solo se mueven dos cosas, hechas con trozos del propio dibujo: los ojos se cierran al parpadear (`blink.png`) y, al hablar, la parte bajo el labio baja unos píxeles y deja ver el interior de la boca (`jaw.png`).
+
 ## 1. Los dos
 
 | | **E** | **R** |
@@ -52,7 +54,7 @@ Una pausa es un gesto, no relleno: máximo 2 s cada una y 3,5 s por episodio.
 
 ## 4. Expresiones, gestos y emotes
 
-**Caras** (`src/puppets.js`, `EXPR`): `neutral`, `feliz`, `sonrisa`, `convencido`, `curioso`, `sorprendido`, `asombrado`, `serio`, `dudoso`, `pensativo`, `confundido`, `resignado`, `triste`, `picaro`, `enfadado`, `ilusionado`. Cada una mueve cejas (altura e inclinación), párpados y boca; la boca se abre con la voz (lip-sync) desde la forma de cada expresión.
+**Caras** (`src/puppets.js`, `EXPR`): `neutral`, `feliz`, `sonrisa`, `convencido`, `curioso`, `sorprendido`, `asombrado`, `serio`, `dudoso`, `pensativo`, `confundido`, `resignado`, `triste`, `picaro`, `enfadado`, `ilusionado`. Como la cara es el dibujo original, hoy solo cambian lo abierta que queda la boca (sorprendido, asombrado, feliz, ilusionado). Los nombres se mantienen en los guiones para cuando haya variantes dibujadas de la cara.
 
 **Gestos** (`src/director.mjs`, `GESTURES`): `salto`, `bota`, `asiente`, `niega`, `inclina`, `endereza`, `acerca`, `aparta`, `vuelve`, `encoge`. Con las manos en los bolsillos (como en las hojas), el cuerpo actúa con la cabeza, la postura y el peso.
 

@@ -105,7 +105,7 @@ await page.route(`${ORIGIN}/**`, r => {
 });
 await page.goto(`${ORIGIN}/`);
 const rigs = Object.fromEntries(['e', 'r'].map(w => [w, JSON.parse(fs.readFileSync(path.join(ROOT, `assets/characters/${w}/rig.json`), 'utf8'))]));
-const imgs = Object.fromEntries(['e', 'r'].map(w => [w, { head: `${ORIGIN}/assets/characters/${w}/head.png`, body: `${ORIGIN}/assets/characters/${w}/body.png` }]));
+const imgs = Object.fromEntries(['e', 'r'].map(w => [w, Object.fromEntries(['head', 'body', 'blink', 'jaw'].map(k => [k, `${ORIGIN}/assets/characters/${w}/${k}.png`]))]));
 await page.evaluate(d => { window.DATA = d.data; window.KID_RIG = d.rigs; window.KID_IMG = d.imgs; }, { data: { ep, beats, w: W, h: H, fps: FPS, life: process.env.CDM_LIFE !== '0' }, rigs, imgs });
 for (const f of ['puppets.js', 'stage.js']) await page.addScriptTag({ path: path.join(ROOT, 'src', f) });
 await page.waitForFunction('window.ready === true');

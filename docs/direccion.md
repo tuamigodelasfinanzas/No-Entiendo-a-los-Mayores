@@ -5,7 +5,7 @@
 ## Capas de cada fotograma (de atrás adelante)
 
 1. **Escenario** (`dormitorio`, `salon`, `parque`, `cocina`, `cole`, `calle`): vectorial, colores suaves y poco contraste para que los niños destaquen. Se mueve un poco menos que los personajes con la cámara (paralaje).
-2. **E y R**: las capas cuerpo / cabeza sacadas de las hojas de personaje, con ojos, cejas y boca vectoriales encima (`src/puppets.js`). E siempre a la izquierda, R a la derecha, de pie sobre el suelo y mirándose.
+2. **E y R**: las capas cuerpo / cabeza sacadas de las hojas de personaje, con la cara del dibujo original; solo se animan el parpadeo y la boca al hablar, con trozos del propio dibujo (`src/puppets.js`, `face()`). E siempre a la izquierda, R a la derecha, de pie sobre el suelo y mirándose.
 3. **Gancho**: la pregunta del episodio en una tarjeta blanca con el distintivo de la serie. Grande desde el primer fotograma; cuando termina la primera frase se encoge y queda arriba como recordatorio del tema.
 4. **Tarjetas**: un icono y una palabra o cifra ("30 AÑOS", "−2 €") que entran con un pop mientras se dice esa línea, sobre las cabezas.
 5. **Bocadillo**: los subtítulos son un bocadillo blanco bajo las caras, con la cola hacia quien habla, la palabra que se está diciendo en su color (rojo E, azul R) y su nombre.
