@@ -6,8 +6,8 @@ name: Publish
 # Pages, waits until the exact time and calls the Make webhook, which publishes it as an Instagram Reel, a Facebook
 # Reel and a YouTube Short (docs/publicacion.md). The same payload as Planet in Numbers.
 #
-# Safety: NOTHING is published unless the repo variable PUBLICAR is "si" AND content/calendario.json has a start
-# date ("inicio"). Otherwise it is a dry run: it renders and sends the video to Telegram as a preview.
+# Safety: NOTHING is published unless PUBLICAR is "si" (repo variable, or "publicar" in content/calendario.json) AND
+# content/calendario.json has a start date ("inicio"). Otherwise it is a dry run: it renders and sends the video to Telegram as a preview.
 # By hand (Actions > Publish > Run workflow): choose slot / script; dry_run defaults to true.
 on:
   schedule:
@@ -72,7 +72,9 @@ jobs:
             if [ -z "$SLOT" ]; then echo "::notice::No slot 5-70 min away (Madrid $(TZ=Europe/Madrid date +%H:%M)): the other time zone's cron, nothing to do"; echo "skip=true" >> "$GITHUB_OUTPUT"; exit 0; fi
           fi
           DRY=true
-          if [ "${{ vars.PUBLICAR }}" = si ] && { [ "${{ github.event_name }}" = schedule ] || [ "${{ inputs.dry_run }}" = false ]; }; then DRY=false; fi
+          # the switch: repo variable PUBLICAR, or "publicar": "si" in content/calendario.json
+          PUB="${{ vars.PUBLICAR }}"; [ "$PUB" = si ] || PUB=$(jq -r '.publicar // ""' content/calendario.json)
+          if [ "$PUB" = si ] && { [ "${{ github.event_name }}" = schedule ] || [ "${{ inputs.dry_run }}" = false ]; }; then DRY=false; fi
           echo "slot=$SLOT" >> "$GITHUB_OUTPUT"; echo "dry=$DRY" >> "$GITHUB_OUTPUT"
           echo "::notice::Slot $SLOT · $([ $DRY = true ] && echo 'DRY RUN (no se publica)' || echo 'PUBLICA')"
 

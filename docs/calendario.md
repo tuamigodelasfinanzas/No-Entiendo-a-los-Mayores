@@ -18,9 +18,11 @@ Instagram, Facebook y YouTube reciben el mismo vídeo a la misma hora. Revisa la
 
 ## Activar la publicación
 
+Activa desde el 26-10-2026 (primer vídeo, 001, publicado a mano esa noche).
+
 Dos llaves, para que nada salga por error:
 
-1. Variable del repositorio `PUBLICAR` = `si` (Settings → Secrets and variables → Actions → Variables).
+1. `"publicar": "si"` en `content/calendario.json` (o la variable del repositorio `PUBLICAR` = `si`, en Settings → Secrets and variables → Actions → Variables).
 2. `"inicio": "AAAA-MM-DD"` en `content/calendario.json`.
 
 Sin las dos, el workflow programado no hace nada; lanzado a mano, solo hace una vista previa y la manda a Telegram.

@@ -1,7 +1,8 @@
 {
-  "_doc": "Dos vídeos al día, a la misma hora en Instagram Reels, Facebook y YouTube Shorts (hora de Madrid). Se publican los guiones en orden de id, saltando los que ya salieron (memoria en la rama gh-pages: state/published.json). Mientras 'inicio' sea null, o la variable del repo PUBLICAR no sea 'si', el workflow solo genera previews y no publica nada. Por qué estas horas: docs/calendario.md.",
+  "_doc": "Dos vídeos al día, a la misma hora en Instagram Reels, Facebook y YouTube Shorts (hora de Madrid). Se publican los guiones en orden de id, saltando los que ya salieron (memoria en la rama gh-pages: state/published.json). Mientras 'inicio' sea null, o PUBLICAR no sea 'si' (variable del repo o el campo 'publicar' de este archivo), el workflow solo genera previews y no publica nada. Por qué estas horas: docs/calendario.md.",
   "zona": "Europe/Madrid",
   "franjas": { "A": "13:30", "B": "20:30" },
-  "inicio": null,
+  "inicio": "2026-10-26",
+  "publicar": "si",
   "idioma": "es"
 }
