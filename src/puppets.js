@@ -51,7 +51,7 @@
     return `<g transform="translate(${f1(x)} ${f1(y)}) scale(${f1(s)}) rotate(${f1(Math.sin(k * 7) * 4)})">${g}</g>`;
   }
 
-  // a kid: st = { who: 'e'|'r', x, y (floor), s, face, look, blink, talk, headR, headX, headY, lean, squash, flip, emote, emoteK, o }
+  // a kid: st = { who: 'e'|'r', x, y (floor), s, face, look, blink, talk, headR, headX, headY, lean, flip, emote, emoteK, o }
   // The face is Chiño's drawing, untouched (docs/biblia-personajes.md). Only two things move, both made from the
   // drawing itself by tools/prepare_characters.py: the eyes close (blink.png) and, while speaking, the part below
   // the lip line slides down a few pixels (jaw.png) over the inside of the mouth.
@@ -71,7 +71,9 @@
   function kid(st) {
     const rig = RIG[st.who], img = IMG[st.who];
     const id = `k${st.who}`;
-    const s = st.s ?? 1, sq = st.squash ?? 1;
+    // never squashed or stretched: the kids always keep the proportions of the drawing (Chiño's rule), so the
+    // squash that stage.js / director.mjs compute is ignored here; jumps and dips still move the whole body
+    const s = st.s ?? 1;
     const [px, py] = rig.pivot;
     const sh = `<ellipse cx="${rig.center}" cy="${rig.feet + 4}" rx="${f1(200 * (1 - (st.jump ?? 0) * 0.002))}" ry="26" fill="url(#kshadow)"/>`;
     const head = `<g transform="translate(${f1(st.headX ?? 0)} ${f1(st.headY ?? 0)}) rotate(${f1(st.headR ?? 0)} ${px} ${py})">
@@ -81,7 +83,7 @@
       </g>`;
     const em = emote(st.emote, st.emoteK ?? 1, rig.center + (st.who === 'e' ? 190 : -190), rig.bbox[1] + 40);
     const flip = st.flip ? -1 : 1;
-    return `<g transform="translate(${f1(st.x)} ${f1(st.y)}) rotate(${f1(st.lean ?? 0)}) scale(${f1(s * flip / Math.sqrt(sq))} ${f1(s * sq)}) translate(${-rig.center} ${-rig.feet})" opacity="${st.o ?? 1}">
+    return `<g transform="translate(${f1(st.x)} ${f1(st.y)}) rotate(${f1(st.lean ?? 0)}) scale(${f1(s * flip)} ${f1(s)}) translate(${-rig.center} ${-rig.feet})" opacity="${st.o ?? 1}">
       ${sh}<image href="${img.body}" x="0" y="0" width="${rig.w}" height="${rig.h}"/>${head}${em}</g>`;
   }
 
