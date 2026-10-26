@@ -32,7 +32,7 @@ E **no** es el listo ni R el tonto (ni al revés). E sabe la mitad de las cosas 
 ## 2. Reglas de diálogo
 
 - **Frases cortas.** Máximo 90 caracteres por línea; lo normal son 3 a 9 palabras. R suele hablar menos que E.
-- **Sin nombrarse.** Se llaman E y R, pero no se llaman por su nombre en el diálogo: una letra suelta no se entiende en voz alta. El nombre se ve en la etiqueta del bocadillo.
+- **Sin nombrarse.** Se llaman E y R, pero no se llaman por su nombre en el diálogo: una letra suelta no se entiende en voz alta. Quién habla se ve por la cola del bocadillo y el color de la palabra.
 - **Una línea, una voz.** Si los dos dicen algo a la vez, es una línea `"ambos"` (casi siempre el cierre).
 - **Turnos.** Pregunta → respuesta segura → pregunta que desmonta → respuesta que empeora... Un personaje puede encadenar dos líneas si la segunda es el giro.
 - **R desmonta con una sola pregunta.** "¿Y quién paga la tarjeta?" vale más que una explicación.
