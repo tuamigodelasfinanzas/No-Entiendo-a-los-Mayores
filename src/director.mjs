@@ -44,11 +44,13 @@ const GESTURES = {
 // listens. A line can name one ("pose" for the speaker, "pose_otro" for the listener); otherwise the director picks
 // from what the line is (its face, a question, an exclamation, an explanation). Only calm, standing poses here:
 // jumping, running, sitting, the ball... are for scripts that ask for them.
+// (rasca and susurra exist but are left out of the automatic choice: their hand goes behind the original hair /
+// cheek and reads as a cut arm; a script can still ask for them)
 const POSES = {
   e: {
-    sorpresa: ['encoge', 'idea'], duda: ['rasca', 'encoge'], piensa: ['rasca', 'idea'], feliz: ['pulgar-arriba', 'corazon'],
+    sorpresa: ['encoge', 'idea'], duda: ['encoge', 'brazos-cruzados'], piensa: ['idea', 'brazos-cruzados'], feliz: ['pulgar-arriba', 'corazon'],
     pregunta: ['encoge', 'explica'], exclama: ['senala', 'idea'], explica: ['explica', 'senala', 'idea', 'pulgar-arriba'],
-    secreto: ['susurra'], escucha: ['manos-cadera', 'brazos-cruzados', null], cierre: ['encoge'],
+    secreto: ['explica'], escucha: ['manos-cadera', 'brazos-cruzados', null], cierre: ['encoge'],
   },
   r: {
     sorpresa: ['mano-frente', 'palmas-arriba'], duda: ['mano-barbilla', 'palmas-arriba'], piensa: ['mano-barbilla'], feliz: ['senala-arriba', 'levanta-mano'],
@@ -96,7 +98,7 @@ export function build(script, o = {}) {
   // shot plan: the hook in two-shot; then the speaker in medium shot, a close-up for short punch lines,
   // and back to the two-shot for reactions and the ending
   let prevShot = 'dos';
-  const poseNow = { e: null, r: null };
+  const poseNow = { e: null, r: null }, lastKind = { e: null, r: null };
   speech.forEach((sp, i) => {
     const { it, who } = sp;
     lines.push({ who, text: it[who], gap: 0.28 + sp.pause });
@@ -132,18 +134,23 @@ export function build(script, o = {}) {
         sfx.push({ s: em === 'bombilla' ? 'ding' : 'pop', l: i, t: 0.1, g: 0.45 });
       }
     }
-    // poses: the speaker's body says what the line is; the listener changes only now and then
+    // poses: the speaker's body says what the line is, on the first syllable (with a small dip and rebound so
+    // the change reads as a movement, not a cut); the listener answers a moment later, and only now and then.
+    // Two lines of the same kind in a row by the same kid keep the pose: fewer, clearer changes
     for (const w of KIDS) {
       const talking = speakers.includes(w);
+      const kind = talking ? (who === 'ambos' ? 'cierre' : lineKind(it, it[who])) : 'escucha';
       let next;
-      if (talking) next = it.pose && who !== 'ambos' ? it.pose : POSES[w][who === 'ambos' ? 'cierre' : lineKind(it, it[who])];
+      if (talking) next = it.pose && who !== 'ambos' ? it.pose : lastKind[w] === kind && poseNow[w] ? poseNow[w] : POSES[w][kind];
       else next = it.pose_otro ?? (i % 3 === 0 || poseNow[w] === null || !POSES[w].escucha.includes(poseNow[w]) ? POSES[w].escucha : [poseNow[w]]);
+      lastKind[w] = talking ? kind : null;
       if (Array.isArray(next)) {
         const opts = next.filter(n => n !== poseNow[w]);
         next = opts.length ? opts[hash(`${script.id}${i}${w}`) % opts.length] : next[0];
       }
       if (next !== poseNow[w]) {
-        keys[w].push({ ...at, t: -0.08, pose0: poseNow[w], pose: next, poseK: 0, e: 'step' }, { ...at, t: 0.08, poseK: 1, e: 'out' });
+        const t0 = talking ? -0.1 : 0.35;
+        keys[w].push({ ...at, t: t0, pose0: poseNow[w], pose: next, poseK: 0, e: 'step' }, { ...at, t: t0 + 0.2, poseK: 1, e: 'back' });
         poseNow[w] = next;
       }
     }

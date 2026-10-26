@@ -26,29 +26,29 @@ CH = os.path.join(ROOT, 'assets/characters')
 POSES = {
     'poses-1.png': {
         'e-explica': ((13, 53, 332, 354), 'stand', []),
-        'e-senala': ((353, 53, 672, 354), 'stand', []),
+        'e-senala': ((353, 53, 672, 354), 'stand', [('keep', 620, 220, 780, 460)]),
         'e-brazos-cruzados': ((692, 53, 1011, 354), 'stand', []),
         'e-encoge': ((13, 408, 332, 717), 'stand', []),
-        'e-rasca': ((353, 408, 672, 717), 'stand', [(250, 110, 430, 262)]),
+        'e-rasca': ((353, 408, 672, 717), 'stand', [('keep', 180, 250, 310, 480)]),
         'e-manos-cadera': ((692, 408, 1011, 717), 'stand', []),
         'r-mano-barbilla': ((13, 785, 332, 1114), 'stand', [(370, 360, 560, 520)]),
-        'r-levanta-mano': ((353, 785, 672, 1114), 'stand', []),
+        'r-levanta-mano': ((353, 785, 672, 1114), 'stand', [('keep', 150, 50, 335, 430)]),
         'r-senala-a-e': ((692, 785, 1011, 1114), 'stand', []),
         'r-brazos-cruzados': ((13, 1171, 332, 1516), 'stand', []),
         'r-palmas-arriba': ((353, 1171, 672, 1516), 'stand', []),
-        'r-mano-frente': ((692, 1171, 1011, 1516), 'stand', [(250, 150, 470, 330)]),
+        'r-mano-frente': ((692, 1171, 1011, 1516), 'stand', [(270, 105, 435, 268), ('keep', 195, 190, 320, 430)]),
     },
     'poses-2.png': {
-        'e-salta': ((35, 123, 266, 516), 'head', []),
+        'e-salta': ((35, 123, 266, 516), 'head', [('keep', 100, 40, 310, 470), ('keep', 570, 40, 800, 470)]),
         'e-corre': ((266, 131, 490, 516), 'head', []),
-        'e-susurra': ((45, 575, 235, 1000), 'stand', [(520, 300, 640, 470)]),
+        'e-susurra': ((45, 575, 235, 1000), 'stand', [('keep', 540, 260, 720, 480)]),
         'e-pulgar-arriba': ((285, 568, 470, 998), 'stand', []),
-        'e-idea': ((35, 1049, 252, 1457), 'stand', []),
+        'e-idea': ((35, 1049, 252, 1457), 'stand', [('keep', 620, 140, 820, 470)]),
         'e-corazon': ((282, 1050, 469, 1456), 'stand', []),
         'r-con-balon': ((525, 122, 747, 553), 'stand', []),
         'r-caminando': ((771, 122, 990, 557), 'stand', []),
         'r-sentado': ((531, 656, 754, 981), 'head', []),
-        'r-senala-arriba': ((759, 594, 997, 1021), 'stand', []),
+        'r-senala-arriba': ((759, 594, 997, 1021), 'stand', [('keep', 590, 40, 896, 470)]),
         'r-atandose': ((539, 1094, 736, 1435), 'head', []),
         'r-leyendo': ((798, 1059, 993, 1460), 'stand', []),
     },
@@ -250,41 +250,73 @@ def main():
             hsil = h.getchannel('A').crop(hb).resize((round(h.crop(hb).width * s_h), round(h.crop(hb).height * s_h)), Image.LANCZOS)
             hs.paste(hsil, (hx, hy))
             hs = np.asarray(dilate(place(hs.point(lambda v: 255 if v > 40 else 0), 'L'), 24)).astype(float) / 255
+            pose_head = hs.copy()
             # and a wide ring around the original head: the hair of the sheets is messier than the drawing
             oh = np.zeros((Hf, W), np.uint8)
             oh[:rig['h']] = (np.asarray(h.getchannel('A')) > 40) * 255
-            oh = dilate(Image.fromarray(oh), 45)
+            oh = dilate(Image.fromarray(oh), 60)
             hs = np.maximum(hs, np.asarray(oh.filter(ImageFilter.GaussianBlur(4))).astype(float) / 255)
-            # the sleeves stay even near the head (a hand scratching the head, a raised arm)
+            # sleeve colour (for the hands drawn in front of the head)
             bf = np.asarray(big).astype(float)
             r_, g_, b_ = bf[..., 0], bf[..., 1], bf[..., 2]
-            sleeve = ((r_ > 140) & (r_ > g_ + 60) & (r_ > b_ + 60)) if cid == 'e' else ((b_ > 150) & (b_ > r_ + 70) & (b_ > g_ + 20))
+            sleeve = ((r_ > 140) & (r_ > g_ + 100) & (r_ > b_ + 100) & (g_ < 90) & (b_ < 90)) if cid == 'e' else ((b_ > 150) & (b_ > r_ + 70) & (b_ > g_ + 20))
             sleeve = np.asarray(Image.fromarray((sleeve * 255).astype(np.uint8)).filter(ImageFilter.MinFilter(3)).filter(ImageFilter.GaussianBlur(1))).astype(float) / 255
+            if cid == 'e':
+                hair = (bf.max(2) < 200) & (r_ > b_ + 25) & (r_ - g_ < 75) & (g_ > b_)
+            else:
+                hair = (r_ > 120) & (b_ < 0.5 * r_) & (g_ > 0.55 * r_) & (g_ < 0.85 * r_)
+            hair = np.asarray(Image.fromarray((hair * 255).astype(np.uint8)).filter(ImageFilter.MedianFilter(5))) > 127
+            skin = (r_ > 200) & (g_ > 130) & (b_ > 0.52 * r_) & (r_ > g_ + 15) & (g_ > b_ + 10)
+            # arms that pass next to the head (a raised hand, a finger): boxes where the ring does not cut the
+            # hand and the sleeve (the hair of the sheet in the box still goes)
+            for b in front:
+                if b[0] == 'keep':
+                    x0, y0, x1, y1 = b[1:]
+                    arm = ~hair[y0:y1, x0:x1]
+                    hs[y0:y1, x0:x1] *= 1 - arm
+            # the hood never goes (shoulders of a jumping kid come up near the chin)
             hs = hs * (1 - sleeve)
             yy = np.arange(Hf)[:, None]
             # under the chin the pose's neck and hood stay; the original head covers the joint
             hs = hs * np.clip((rig['chin'] - 5 - yy) / 6, 0, 1)
             body_a = al * (1 - hs)
+            # the sheets draw the chin a little lower than the original: under the original chin, what is left of
+            # the sheet's chin and jaw line becomes neck in the shade of the head (the hood and the collar stay)
+            band = (yy >= rig['chin'] - 6) & (yy < rig['chin'] + 60)
+            shirt = (b_ > r_ + 10) | (bf.min(2) > 200)
+            line = (bf.max(2) < 120) & (r_ - g_ < 45) & (r_ - b_ < 60)        # the jaw line, not the hood's shadows
+            chin = band & (pose_head > 0.5) & (skin | line) & ~shirt & (al > 0)
+            cm = np.asarray(Image.fromarray((chin * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(1.5))).astype(float)[..., None] / 255
+            # the skin of the drawing, in the shade of the head
+            neck = np.array([int(rig['skin'][i:i + 2], 16) for i in (1, 3, 5)], float)
+            shade = np.clip((yy - rig['chin']) / 30, 0, 1)[..., None]          # darker right under the chin
+            neck_px = neck * (0.84 + 0.1 * shade)
+            bf = bf * (1 - cm) + np.broadcast_to(neck_px, bf.shape) * cm
+            big = Image.fromarray(bf.clip(0, 255).astype(np.uint8))
             # the original head's own silhouette is covered by the head layer: keep the body there (no holes)
             out = os.path.join(CH, cid, 'poses', name[2:])
+            if os.environ.get('POSES_DEBUG'):
+                Image.fromarray(np.dstack([np.asarray(big), al]).clip(0, 255).astype(np.uint8), 'RGBA').save(os.path.join(os.environ['POSES_DEBUG'], name + '.png'))
             rgba = np.dstack([np.asarray(big).astype(float), body_a]).clip(0, 255).astype(np.uint8)
             rgba[rgba[..., 3] == 0] = 0
             Image.fromarray(rgba, 'RGBA').save(out + '.png', optimize=True)
             entry = {'h': Hf, 'feet': round(soles_f - (SOLES - rig['feet']))}
-            if front:
+            if any(b[0] != 'keep' for b in front):
                 fm = Image.new('L', (W, Hf))
                 d = ImageDraw.Draw(fm)
                 for b in front:
-                    d.rectangle(b, fill=255)
+                    if b[0] != 'keep':
+                        d.rectangle(b, fill=255)
                 fm = np.asarray(fm.filter(ImageFilter.GaussianBlur(4))).astype(float) / 255
-                # only the hand / sleeve, not hair or face of the pose: skin-or-sleeve pixels inside the box
-                fa = (al * fm)
+                # only the hand and the sleeve (and their outline), not the hair of the sheet
+                keep = np.asarray(Image.fromarray(((~hair & (skin | (sleeve > 0.5) | (bf.max(2) < 140))) * 255).astype(np.uint8)).filter(ImageFilter.MaxFilter(3)).filter(ImageFilter.GaussianBlur(1))).astype(float) / 255
+                fa = al * fm * keep
                 fr = np.dstack([np.asarray(big).astype(float), fa]).clip(0, 255).astype(np.uint8)
                 fr[fr[..., 3] == 0] = 0
                 Image.fromarray(fr, 'RGBA').save(out + '-front.png', optimize=True)
                 entry['front'] = True
             table[cid][name[2:]] = entry
-            print(name, f's={s:.3f} head s={s_h:.3f} err={err:.3f} soles={soles_f:.0f} h={Hf}', 'front' if front else '')
+            print(name, f's={s:.3f} head s={s_h:.3f} err={err:.3f} soles={soles_f:.0f} h={Hf}', 'front' if entry.get('front') else '')
     for cid in ('e', 'r'):
         p = os.path.join(CH, cid, 'rig.json')
         rig = json.load(open(p))

@@ -84,8 +84,7 @@
   },
   "rasca": {
    "h": 1207,
-   "feet": 1150,
-   "front": true
+   "feet": 1150
   },
   "manos-cadera": {
    "h": 1207,
@@ -101,8 +100,7 @@
   },
   "susurra": {
    "h": 1207,
-   "feet": 1150,
-   "front": true
+   "feet": 1150
   },
   "pulgar-arriba": {
    "h": 1207,

@@ -68,11 +68,14 @@
     return mouth + (shut ? `<image href="${img.blink}" x="0" y="0" width="${rig.w}" height="${rig.h}"/>` : '');
   }
 
-  // how far a pose moves the head down (sitting, crouching...), blended while the pose changes
+  // how far a pose moves the kid down (sitting, crouching...), blended while the pose changes, plus the little dip
+  // and rebound of the change itself (poseK eases with overshoot: down while the new pose comes in, up past 1)
   function poseDy(st) {
     const rig = RIG[st.who], dy = n => (n && rig.poses?.[n] ? rig.feet - rig.poses[n].feet : 0);
     const k = st.poseK ?? 1;
-    return st.pose0 !== st.pose && k < 1 ? dy(st.pose0) + (dy(st.pose) - dy(st.pose0)) * k : dy(st.pose);
+    if (st.pose0 === st.pose || k === 1) return dy(st.pose);
+    const c = Math.min(1, Math.max(0, k));
+    return dy(st.pose0) + (dy(st.pose) - dy(st.pose0)) * c + 14 * Math.sin(Math.PI * Math.min(1.25, k));
   }
 
   function kid(st) {
