@@ -33,6 +33,6 @@
     {"e": "Con otra reunión.", "cara": "serio", "gesto": "asiente"},
     {"pausa": 1.0, "reaccion": "silencio", "caras": {"r": "resignado"}},
     {"r": "Mi padre dice que casi todas podrían ser un mensaje."},
-    {"e": "Cosas de mayores, Rubén.", "cara": "resignado"}
+    {"e": "Cosas de mayores.", "cara": "resignado"}
   ]
 }

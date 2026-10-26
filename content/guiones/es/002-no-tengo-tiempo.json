@@ -25,7 +25,7 @@
     "#vidaadulta"
   ],
   "lineas": [
-    {"e": "Rubén, ¿por qué los mayores dicen que no tienen tiempo?", "cara": "curioso"},
+    {"e": "¿Por qué los mayores dicen que no tienen tiempo?", "cara": "curioso"},
     {"r": "Porque trabajan, hacen la compra, la cena, la colada...", "cara": "pensativo"},
     {"e": "Ayer mi madre estuvo dos horas mirando el móvil.", "cara": "dudoso", "tarjeta": {"icono": "movil", "texto": "2 HORAS"}},
     {"r": "Eso no cuenta. Estaba descansando.", "cara": "convencido"},

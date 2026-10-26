@@ -25,7 +25,7 @@
     "#privacidad"
   ],
   "lineas": [
-    {"e": "Rubén, ¿qué son las cookies?", "cara": "curioso"},
+    {"e": "¿Qué son las cookies?", "cara": "curioso"},
     {"r": "En inglés, galletas.", "cara": "convencido", "tarjeta": {"icono": "galleta", "texto": "COOKIES"}},
     {"e": "¡Pues mi padre las acepta en todas las páginas!", "cara": "feliz", "gesto": "salto"},
     {"r": "Esas no se comen. Son de internet.", "cara": "serio"},

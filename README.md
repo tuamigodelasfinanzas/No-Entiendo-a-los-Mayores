@@ -1,6 +1,6 @@
 # No Entiendo a los Mayores (@noentiendoalosmayores)
 
-Shorts animados y totalmente automatizados en castellano: dos niños, **Edu** y **Rubén**, intentan entender el mundo de los adultos... y terminan en **"Cosas de mayores."**
+Shorts animados y totalmente automatizados en castellano: dos niños, **E** y **R**, intentan entender el mundo de los adultos... y terminan en **"Cosas de mayores."**
 
 Instagram Reels y YouTube Shorts: @noentiendoalosmayores · Facebook: página "No Entiendo a los Mayores" · 2 vídeos al día, 13:30 y 20:30 (hora de Madrid).
 
