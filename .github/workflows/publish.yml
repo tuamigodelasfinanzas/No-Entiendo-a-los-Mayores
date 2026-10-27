@@ -123,7 +123,7 @@ jobs:
           npm install --no-audit --no-fund
           npx playwright install --with-deps chromium
           sudo apt-get install -y -qq ffmpeg >/dev/null
-          pip install -q edge-tts numpy
+          pip install -q edge-tts numpy scipy pillow fonttools
 
       - name: Validate and render
         if: steps.mode.outputs.skip != 'true' && steps.what.outputs.skip != 'true' && inputs.media == ''
@@ -131,7 +131,16 @@ jobs:
         run: |
           set -euo pipefail
           node tools/validate.mjs "${{ steps.what.outputs.file }}"
-          node src/render.mjs "${{ steps.what.outputs.file }}" out
+          # the v7 model that Chiño approved (tools/episodio.py, the rig of the intro Short): voices of the script,
+          # then the video; the text of the post and the cover as before
+          ID="${{ steps.what.outputs.id }}"
+          mkdir -p out
+          python3 tools/episodio.py lineas "$ID"
+          python3 tools/presentacion_voces.py "content/voces/$ID"
+          python3 tools/episodio.py "$ID" out/short.mp4
+          node -e "import('./src/post.mjs').then(m => { const fs = require('fs'); const p = m.post(JSON.parse(fs.readFileSync(process.argv[1], 'utf8'))); p.cover_ms = 600; fs.writeFileSync('out/post.json', JSON.stringify(p, null, 1)); })" "${{ steps.what.outputs.file }}"
+          ffmpeg -y -v error -ss 0.6 -i out/short.mp4 -frames:v 1 -q:v 3 out/cover.jpg
+          ffprobe -v error -show_entries format=duration -of json out/short.mp4 > out/timing.json
           DIR="${{ steps.what.outputs.date }}-${{ steps.mode.outputs.slot }}-${{ steps.what.outputs.id }}"
           [ "${{ steps.mode.outputs.dry }}" = true ] && DIR="preview-$DIR"
           mkdir -p "site/media/$DIR"
