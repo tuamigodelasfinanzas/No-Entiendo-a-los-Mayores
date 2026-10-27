@@ -38,5 +38,5 @@ Igual que en Planet in Numbers: cada vídeo llega a Telegram con su texto, listo
 
 ## Comprobaciones
 
-- `health.yml` (cada mañana, 06:54 UTC): la lógica compartida de `zero-understands/.github/workflows/health.yml`. Antes de activar la publicación solo mira las ejecuciones fallidas; con `PUBLICAR = si` también el token de Instagram y GitHub Pages.
+- `health.yml` (cada mañana a las 07:45 de Madrid, en el bot @noentiendoalosmayores_bot): la lógica compartida de `zero-understands/.github/workflows/health.yml`. Antes de activar la publicación solo mira las ejecuciones fallidas; con `PUBLICAR = si` también el token de Instagram y GitHub Pages.
 - Si algo falla en una publicación real, Make recibe `status: "error"` con el enlace a la ejecución.
