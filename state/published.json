@@ -8,5 +8,10 @@
     "date": "2026-10-27",
     "slot": "A",
     "media": "2026-10-27-P-000-presentacion"
+  },
+  "002-no-tengo-tiempo": {
+    "date": "2026-10-27",
+    "slot": "B",
+    "media": "2026-10-27-C-002-no-tengo-tiempo"
   }
 }
