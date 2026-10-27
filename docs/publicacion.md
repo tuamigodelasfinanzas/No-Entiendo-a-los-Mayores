@@ -17,7 +17,7 @@ publish.yml (40 min antes) ──render──> gh-pages/media/<fecha>-<franja>-<
 | Secreto | Para qué |
 |---|---|
 | `MAKE_WEBHOOK_URL` | Webhook del escenario de Make de este canal |
-| `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | Previews y aviso diario de salud (pueden ser los mismos que en los otros canales) |
+| `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | Previews y aviso diario de salud (pueden ser los mismos que en los otros canales). Para comprobarlos: Actions → *Telegram test* → Run workflow; si solo está el token, lista los chats que le han escrito al bot |
 | `IG_ACCESS_TOKEN`, `IG_USER_ID` | Solo para el chequeo diario del token de Instagram |
 
 **Variable** `PUBLICAR` = `si` cuando se quiera empezar (ver [calendario](calendario.md)).
