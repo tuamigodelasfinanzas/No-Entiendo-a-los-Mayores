@@ -126,6 +126,14 @@ def hands(meta):
             skin = flood(skin, [tuple(np.argwhere(skin)[len(np.argwhere(skin)) // 2][::-1])]) if skin.any() else skin
             fx, fy, d = HAND_WRIST[side][name]
             wx, wy = fx * c.shape[1], fy * c.shape[0]
+            # the wrist, better: the middle of where the skin comes out of the sheet's cuff (the direction stays the
+            # measured one: the sheet's cuff is cut by the cell, its own axis is not reliable)
+            cuff = hood_colour(r, g, b) & (a > 0.5)
+            # only the cuff itself: thin red lines in the skin (E's outlines) go
+            cuff = np.asarray(Image.fromarray((cuff * 255).astype(np.uint8)).filter(ImageFilter.MinFilter(9))) > 0
+            contact = skin & grow(cuff, 4)
+            if contact.sum() > 30 and cuff.sum() > 200:
+                wy, wx = np.argwhere(contact).mean(0)
             k = math.sqrt(target * HAND_SIZE.get(name, 1.0) / skin.sum())
             # only the hand: the sheet's cuff goes, the hand slides into E's own cuff
             if HAND_JOIN:                   # creases split the hand into islands: join them, fill what they enclose

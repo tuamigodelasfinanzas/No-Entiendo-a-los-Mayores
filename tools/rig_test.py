@@ -100,7 +100,8 @@ def arm(side, Mt, S, tilt, up_out, fore_out, hand, hand_rot=0.0):
     Mu = T(*Sw) @ R(th_u - math.radians(REST['up_' + side])) @ Sc(S) @ T(*-S0)
     Ew = ap(Mu, E0)
     Mf = T(*Ew) @ R(th_f - math.radians(REST['fore_' + side])) @ Sc(S) @ T(*-E0)
-    Ww = ap(Mf, J['wrist_' + side]) - 9 * S * np.array([math.cos(th_f), math.sin(th_f)])   # into the cuff
+    into = (SLEEVES['l']['cuff'] - 8) if SLEEVES else -9    # the hand's wrist: a little inside the cuff's opening
+    Ww = ap(Mf, J['wrist_' + side]) + into * S * np.array([math.cos(th_f), math.sin(th_f)])
     h = HANDS[f'{hand}_{side}']
     Mh = T(*Ww) @ R(th_f - math.radians(h['dir']) + sgn * math.radians(hand_rot)) @ Sc(S) @ T(*[-v for v in h['wrist']])
     return Mu, Mf, Mh
@@ -213,8 +214,8 @@ ARM_KEYS = [  # (time, pose); between keys the angles ease, the hand changes hal
     (7.0, {'l': (84, 88, 'senala', 0), 'r': (6, 4, REST_HAND, 0)}),
     (7.5, {'l': (6, 4, REST_HAND, 0), 'r': (160, 160, 'senala', 0)}),            # points up: an idea
     (8.7, {'l': (6, 4, REST_HAND, 0), 'r': (160, 160, 'senala', 0)}),
-    (9.1, {'l': (40, 80, 'abierta', 0), 'r': (40, 80, 'abierta', 0)}),           # shrug
-    (10.1, {'l': (40, 80, 'abierta', 0), 'r': (40, 80, 'abierta', 0)}),
+    (9.1, {'l': (40, 80, 'abierta', 35), 'r': (40, 80, 'abierta', 35)}),         # shrug: palms out, fingers up
+    (10.1, {'l': (40, 80, 'abierta', 35), 'r': (40, 80, 'abierta', 35)}),
     (10.5, {'l': (14, 30, 'puno', 0), 'r': (14, 30, 'puno', 0)}),                # gets ready to jump
     (10.9, {'l': (150, 168, 'puno', 0), 'r': (150, 168, 'puno', 0)}),            # celebrates in the air
     (11.6, {'l': (150, 168, 'puno', 0), 'r': (150, 168, 'puno', 0)}),
@@ -229,7 +230,10 @@ def arms_at(t):
             out = {}
             for side in ('l', 'r'):
                 pa, pb = a[side], b[side]
-                out[side] = (pa[0] + (pb[0] - pa[0]) * k, pa[1] + (pb[1] - pa[1]) * k, pa[2] if k < 0.5 else pb[2],
+                # the hand changes early when it leaves a gesture and late when it goes into one, so a pointing hand
+                # doesn't point at the floor on its way down
+                swap = 0.25 if pb[2] == REST_HAND else 0.6
+                out[side] = (pa[0] + (pb[0] - pa[0]) * k, pa[1] + (pb[1] - pa[1]) * k, pa[2] if k < swap else pb[2],
                              pa[3] + (pb[3] - pa[3]) * k)
             return out
     return ARM_KEYS[-1][1]
