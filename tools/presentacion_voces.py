@@ -1,11 +1,13 @@
 """Voices of the channel's intro Short (content/especiales/presentacion/lineas.json) -> voces/<id>.mp3 + duraciones.json,
 and the other versions tried, to compare, in voces-pruebas/<version>/. Same voices as src/voice.mjs (edge-tts, silence
 trimmed at both ends); the main version no longer has the pitch / formant child processing.
-Usage: python3 tools/presentacion_voces.py   (needs edge-tts and ffmpeg; runs in .github/workflows/presentacion-voces.yml)"""
-import json, os, subprocess
+Usage: python3 tools/presentacion_voces.py [especial]   (needs edge-tts and ffmpeg; runs in .github/workflows/presentacion-voces.yml)
+  especial: a folder of content/especiales (default presentacion); other than the intro, only the main version"""
+import json, os, subprocess, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DIR = os.path.join(ROOT, 'content/especiales/presentacion')
+SPECIAL = sys.argv[1] if len(sys.argv) > 1 else 'presentacion'
+DIR = os.path.join(ROOT, 'content/especiales', SPECIAL)
 # kid: 1 = no pitch / formant processing afterwards. Chiño found the Rubber Band child voice metallic (2026-10-27):
 # the voices now stay as the service speaks them, made a little younger only with its own pitch and rate
 VARIANTS = {
@@ -55,6 +57,9 @@ def multilingual():
 
 
 def main():
+    if SPECIAL != 'presentacion':
+        render(MAIN, os.path.join(DIR, 'voces'))
+        return
     os.makedirs(os.path.join(DIR, 'voces-pruebas'), exist_ok=True)
     multilingual()
     for name in VARIANTS:
