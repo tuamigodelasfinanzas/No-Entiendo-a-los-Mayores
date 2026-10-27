@@ -52,6 +52,7 @@ POSES = {
     'saluda_izq': {'l': (132, 150, 'abierta~', 0), 'r': (10, 6, 'pose', 0)},
     'celebra': {'l': (150, 168, 'puno', 0), 'r': (150, 168, 'puno', 0)},
     'encoge': {'l': (40, 80, 'abierta~', 35), 'r': (40, 80, 'abierta~', 35)},
+    'encoge_corto': {'l': (24, 62, 'abierta~', 30), 'r': (40, 80, 'abierta~', 35)},   # the hand towards E stays close
 }
 
 
@@ -180,6 +181,81 @@ def settle(a, b, s):
 
 
 # ---------------------------------------------------------------- one kid
+WRISTS = []                                     # where the hands went (for checking the joins)
+WRIST_INFO = {}
+
+
+def wrist_info(m, c, hand, side):
+    """Skin colour, edge colour and wrist half width (px of the drawing) of a hand piece: measured on the piece
+    itself, across its wrist->fingers axis where the hand is full."""
+    key = (c, hand.rstrip('~'), side)
+    if key in WRIST_INFO:
+        return WRIST_INFO[key]
+    h = m.HANDS[f'{key[1]}_{side}']
+    a = np.asarray(m.IMG[f'hand_{key[1]}_{side}'], float)
+    ax = np.array([math.cos(math.radians(h['dir'])), math.sin(math.radians(h['dir']))])
+    nx = np.array([-ax[1], ax[0]])
+    w0 = np.array(h['wrist'], float)
+    widths, cols, depths = [], [], []
+    for depth in range(-20, 70, 2):
+        q = w0 + ax * depth
+        ok = []
+        for t in np.arange(-70, 70, 0.5):
+            x, y = (q + nx * t).astype(int)
+            if 0 <= y < a.shape[0] and 0 <= x < a.shape[1] and a[y, x, 3] > 128:
+                ok.append(t)
+                if 20 <= depth <= 44 and abs(t) < 14 and a[y, x, 3] > 250:
+                    cols.append(a[y, x, :3])
+        if ok:
+            widths.append(max(ok) - min(ok))
+            depths.append(depth)
+    cols = np.array(cols) if len(cols) else np.array([[240, 190, 160.0]])
+    lum = cols.sum(1)
+    skin = np.median(cols[(lum >= np.percentile(lum, 25)) & (lum <= np.percentile(lum, 70))], 0)
+    edge = skin * 0.8
+    half = float(np.clip(0.42 * max(widths or [44]), 15, 24))
+    # where the hand is really full (its cut edge is above this): the join must reach it before fading
+    full = next((d for d, w_ in zip(depths, widths) if w_ >= 0.8 * max(widths)), 10)
+    WRIST_INFO[key] = (skin, edge, half, full)
+    return WRIST_INFO[key]
+
+
+def wrist_join(img, Ww, Ph, ah, info, S):
+    """Skin between the cuff and the hand, the colour of the hand, so the hand never looks detached: a tapered piece
+    from inside the sleeve (Ww) down into the hand, fading out over the hand so it covers its cut edge."""
+    skin, edge, half, full = info
+    into = (max(full, 0) + 10) * S
+    B = Ph + ah * into
+    d = B - Ww
+    L = np.linalg.norm(d)
+    if L < 1:
+        return
+    u = d / L
+    n = np.array([-u[1], u[0]])
+    pad = half * S + 4
+    pts = np.array([Ww + n * pad, Ww - n * pad, B + n * pad, B - n * pad])
+    x0, y0 = np.floor(pts.min(0)).astype(int)
+    x1, y1 = np.ceil(pts.max(0)).astype(int)
+    x0, y0, x1, y1 = max(x0, 0), max(y0, 0), min(x1, W), min(y1, H)
+    if x1 <= x0 or y1 <= y0:
+        return
+    yy, xx = np.mgrid[y0:y1, x0:x1].astype(float)
+    dx, dy = xx - Ww[0], yy - Ww[1]
+    along = dx * u[0] + dy * u[1]
+    across = np.abs(dx * n[0] + dy * n[1])
+    r = half * S * (1.0 - 0.06 * np.clip(along / L, 0, 1))
+    al = np.clip(r - across + 0.5, 0, 1) * (along >= 0) * np.clip((L - along) / (12 * S), 0, 1)
+    k = np.clip((across - (r - 2.4 * S)) / (2.4 * S), 0, 1)[..., None]     # thin darker edge, like the drawing's
+    shade = 1 - 0.07 * (across / np.maximum(r, 1))[..., None] ** 2          # a little rounder in the middle
+    rgb = (skin[None, None] * shade) * (1 - k) + edge[None, None] * k
+    tile = Image.fromarray(np.dstack([np.clip(rgb, 0, 255), al * 255]).astype(np.uint8), 'RGBA')
+    img.alpha_composite(tile, (int(x0), int(y0)))
+
+
+def HANDS_OF(m, hand, side):
+    return m.HANDS[f'{hand.rstrip("~")}_{side}']['wrist']
+
+
 def kid(img, c, x, floor, S, p):
     """Draws kid c with the feet centred at (x, floor) on the frame, S times the size of the drawing.
     p: tilt, head (rad), drop (px of the drawing), arms {'l': (...), 'r': (...)}, blink, talk 0..1."""
@@ -208,7 +284,7 @@ def kid(img, c, x, floor, S, p):
     for part, i in (('foot_', 2), ('shin_', 1), ('thigh_', 0)):
         for side in ('l', 'r'):
             m.draw(img, part + side, legs[side][i])
-    arms = {}
+    arms, joins = {}, {}
     for side in ('l', 'r'):
         up, fore, hand, rot, where = (list(p['arms'][side]) + [None])[:5]
         Mu, Mf, Mhd = m.arm(side, Mt, S, tilt, up, fore, hand, rot)
@@ -218,9 +294,15 @@ def kid(img, c, x, floor, S, p):
         th_s = th_u - m.SHOULDER_FOLLOW * (th_u - (math.pi / 2 + tilt))
         t_sh = np.array([math.cos(th_s), math.sin(th_s)])
         arms[side] = (hand, Mhd, sleeve(m, side, Sw, Ew, Ww, t_sh, S), where)
+        hp = m.HANDS[f'{hand.rstrip("~")}_{side}']
+        Ph = ap(Mhd, hp['wrist'])
+        tip = ap(Mhd, np.array(hp['wrist']) + 10 * np.array([math.cos(math.radians(hp['dir'])), math.sin(math.radians(hp['dir']))]))
+        joins[side] = (Ww, Ph, (tip - Ph) / max(np.linalg.norm(tip - Ph), 1e-6), wrist_info(m, c, hand, side))
+        WRISTS.append(Ph)
     for side, (hand, Mhd, sl, where) in arms.items():
         if where != 'front':
             m.draw(img, f'hand_{hand.rstrip("~")}_{side}', Mhd)
+            wrist_join(img, *joins[side], S)
             paste_sleeve(img, sl)
     torso = Image.new('RGBA', (W, H))
     m.draw(torso, 'torso', Mt)
@@ -235,9 +317,10 @@ def kid(img, c, x, floor, S, p):
         m.draw(img, 'blink', Mh)
     for side, (hand, Mhd, sl, where) in arms.items():
         if where == 'front':                    # a hand in front of the face (on the chin)
+            m.draw(img, f'hand_{hand.rstrip("~")}_{side}', Mhd)
+            wrist_join(img, *joins[side], S)
             paste_sleeve(img, sl)
             paste_sleeve(img, sl, fade=m.SHOULDER_FADE, mask=tmask)
-            m.draw(img, f'hand_{hand.rstrip("~")}_{side}', Mhd)
     return Mh
 
 
@@ -308,7 +391,7 @@ ARMS = {  # kid -> [(time, pose)]; between keys the arm moves in 0.35 s
     'e': [(0, 'quieto'), (3.05, 'senala_arriba'), (7.1, 'cintura'), (9.3, 'explica'), (12.0, 'quieto'),
           (16.2, 'rasca'), (17.45, 'senala_arriba'), (20.4, 'quieto'), (23.05, 'celebra'), (24.6, 'quieto'),
           (25.45, 'celebra'), (27.4, 'saluda_izq')],
-    'r': [(0, 'quieto'), (5.65, 'encoge'), (7.0, 'quieto'), (12.1, 'barbilla'), (16.0, 'quieto'),
+    'r': [(0, 'quieto'), (5.65, 'encoge_corto'), (7.0, 'quieto'), (12.1, 'barbilla'), (16.0, 'quieto'),
           (20.7, 'explica'), (22.9, 'quieto'), (25.5, 'saluda')],
 }
 MOVE = 0.6
@@ -657,9 +740,10 @@ def video(out):
     from multiprocessing import Pool
     work = os.path.join(os.path.dirname(os.path.abspath(out)), 'presentacion-work')
     os.makedirs(work, exist_ok=True)
-    n = int(TOTAL * FPS)
+    t0, t1 = (float(v) for v in os.environ.get('TRAMO', f'0,{TOTAL}').split(','))   # TRAMO=3,7.2: only that bit
+    n0, n = int(t0 * FPS), int(t1 * FPS)
     jobs = int(os.environ.get('JOBS', os.cpu_count() or 2))
-    cuts = np.linspace(0, n, jobs * 4 + 1).astype(int)
+    cuts = np.linspace(n0, n, jobs * 4 + 1).astype(int)
     parts = [(int(cuts[k]), int(cuts[k + 1]), os.path.join(work, f'part{k:02d}.raw')) for k in range(len(cuts) - 1)]
     with Pool(jobs) as pool:
         pool.map(render_range, parts, chunksize=1)
@@ -668,7 +752,7 @@ def video(out):
                     os.path.join(work, 'mix.wav')], check=True)
     cat = subprocess.Popen(['cat'] + [p[2] for p in parts], stdout=subprocess.PIPE)
     subprocess.run(['ffmpeg', '-y', '-v', 'error', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-s', f'{W}x{H}', '-r', str(FPS),
-                    '-i', '-', '-i', os.path.join(work, 'mix.wav'), '-c:v', 'libx264', '-preset', 'slow', '-crf', '18',
+                    '-i', '-', '-ss', str(t0), '-i', os.path.join(work, 'mix.wav'), '-c:v', 'libx264', '-preset', 'slow', '-crf', '18',
                     '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k', '-shortest', '-movflags', '+faststart', out],
                    stdin=cat.stdout, check=True)
     for p in parts:
