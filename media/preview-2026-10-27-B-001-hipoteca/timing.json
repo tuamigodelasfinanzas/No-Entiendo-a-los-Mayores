@@ -1,6 +1,6 @@
 {
  "id": "001-hipoteca",
- "total": 32.84,
+ "total": 33.04,
  "voice": true,
  "lines": [
   {
@@ -12,61 +12,61 @@
   {
    "who": "e",
    "start": 1.85,
-   "dur": 3.86,
+   "dur": 3.91,
    "text": "Fácil. El banco te deja dinero para comprar una casa."
   },
   {
    "who": "e",
-   "start": 5.99,
-   "dur": 3.55,
+   "start": 6.04,
+   "dur": 3.6,
    "text": "Y luego se lo devuelves. Durante treinta años."
   },
   {
    "who": "r",
-   "start": 9.83,
-   "dur": 3.67,
+   "start": 9.92,
+   "dur": 3.7,
    "text": "¿Treinta años? ¡Si mi padre tiene cuarenta!"
   },
   {
    "who": "r",
-   "start": 13.78,
+   "start": 13.9,
    "dur": 2.04,
    "text": "¿Y devuelves lo mismo que te dejaron?"
   },
   {
    "who": "e",
-   "start": 16.1,
-   "dur": 4.34,
+   "start": 16.22,
+   "dur": 4.42,
    "text": "No. Bastante más. Se llaman intereses."
   },
   {
    "who": "r",
-   "start": 20.72,
+   "start": 20.91,
    "dur": 2.33,
    "text": "O sea, que pagas una casa y media."
   },
   {
    "who": "e",
-   "start": 23.33,
-   "dur": 1.63,
+   "start": 23.52,
+   "dur": 1.66,
    "text": "Pero al final la casa es tuya."
   },
   {
    "who": "r",
-   "start": 25.24,
+   "start": 25.46,
    "dur": 1.92,
    "text": "¿Y mientras tanto, de quién es?"
   },
   {
    "who": "e",
-   "start": 27.44,
+   "start": 27.66,
    "dur": 1.27,
    "text": "Un poquito del banco."
   },
   {
    "who": "ambos",
-   "start": 30.19,
-   "dur": 1.32,
+   "start": 30.41,
+   "dur": 1.3,
    "text": "Cosas de mayores."
   }
  ]
