@@ -159,8 +159,12 @@
         else if (st.blink == null) { const ph = (gt + (st.who === 'e' ? 0.9 : 2.4)) % 3.9; st.blink = ph < 0.14 ? Math.sin(ph / 0.14 * Math.PI) : 0; }
         const sp = speaking(beat, st.who, gt);
         // mouth: a fast, uneven open/close while the line plays (sum of two sines, never perfectly regular)
-        st.talk = sp >= 0 && st.mute !== true ? Math.max(0, 0.55 + 0.35 * Math.sin(sp * 17.3) + 0.25 * Math.sin(sp * 29.1 + 1.3)) * Math.min(1, sp * 8) : 0;
+        // mouth: follows the loudness of the line's voice (ln.env, 50 per second, render.mjs): shut in the pauses,
+        // wider on the stressed syllables; old lines without env keep the two-sine flap
         const ln = sp >= 0 ? beat.lines.find(l => (l.who === st.who || l.who === 'ambos') && gt >= l.start && gt <= l.start + l.dur) : null;
+        const envAt = (e, x) => { const i = Math.floor(x), f = x - i; return (e[i] ?? 0) * (1 - f) + (e[i + 1] ?? 0) * f; };
+        st.talk = sp < 0 || st.mute === true ? 0 : ln?.env?.length ? envAt(ln.env, sp * 50)
+          : Math.max(0, 0.55 + 0.35 * Math.sin(sp * 17.3) + 0.25 * Math.sin(sp * 29.1 + 1.3)) * Math.min(1, sp * 8);
         if (ln && gt > ln.start + ln.dur - 0.08) st.talk = 0;
         const ks = LIFE && st.life !== false ? alive(a, st, beat, lt, gt, sp) : { ...st };
         svg = kid(ks);

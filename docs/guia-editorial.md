@@ -40,6 +40,7 @@ La serie aparece como distintivo de color sobre la pregunta del gancho (`content
 ## 5. Tono y lenguaje
 
 - Español de España natural, ágil y claro; nada demasiado local (lista de palabras a evitar en `tools/validate.mjs`). Si un concepto es solo de España (Bizum, ITV), se explica en la propia frase.
+- Los niños **nunca** se llaman por su nombre (ni entre ellos, ni en el título, ni en el texto del post): hablan de tú a tú. `tools/validate.mjs` lo comprueba.
 - Familiar e inocente, apto para plataformas generalistas. Sin insultos, sin alcohol ni apuestas, sin dobles sentidos.
 - El dato del aprendizaje tiene que ser correcto. Va en el texto del post (📚) y, cuando cabe, en el diálogo.
 
