@@ -3,5 +3,10 @@
     "date": "2026-10-27",
     "slot": "A",
     "media": "2026-10-27-A-001-hipoteca"
+  },
+  "000-presentacion": {
+    "date": "2026-10-27",
+    "slot": "A",
+    "media": "2026-10-27-P-000-presentacion"
   }
 }
