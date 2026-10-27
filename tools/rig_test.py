@@ -1,4 +1,4 @@
-"""Rig test: E walks towards the camera, waves, points, gives a thumbs up, shrugs and jumps, moved only by the
+"""Rig test: E walks towards the camera, waves, points away and up, shrugs and jumps, moved only by the
 skeleton of tools/split_parts.py.
 Usage: python3 tools/rig_test.py out.mp4 [--debug]      (--debug draws the joints)
 
@@ -10,11 +10,14 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PARTS = os.path.join(ROOT, 'assets/characters/e/parts')
+RIG = os.environ.get('RIG', 'parts')            # parts: first cut (hands in the pockets); rig: from pose A
+PARTS = os.path.join(ROOT, 'assets/characters/e', RIG)
 W, H, FPS = 1080, 1920, 30
 DUR = 14.0
 
-meta = json.load(open(os.path.join(PARTS, 'parts.json')))
+meta = json.load(open(os.path.join(PARTS, 'parts.json' if RIG == 'parts' else 'rig.json')))
+TORSO_FREE = 'torso_libre' if RIG == 'parts' else 'torso'
+REST_HAND = 'relajada' if RIG == 'parts' else 'pose'
 J = {k: np.array(v, float) for k, v in meta['joints'].items()}
 IMG = {n: Image.open(os.path.join(PARTS, n + '.png')).convert('RGBA') for n in meta['pieces']}
 OFF = {n: np.array([p['x'], p['y']], float) for n, p in meta['pieces'].items()}
@@ -66,7 +69,9 @@ HANDS = meta['hands']
 REST = {}
 for _sd in ('l', 'r'):
     REST['up_' + _sd] = math.degrees(ang(J['elbow_' + _sd] - J['shoulder_' + _sd]))
+    REST['arm_' + _sd] = math.degrees(ang(J['wrist_' + _sd] - J['shoulder_' + _sd]))
     REST['fore_' + _sd] = math.degrees(ang(J['wrist_' + _sd] - J['elbow_' + _sd]))
+ONE_PIECE = 'arm_l' in meta['pieces']          # pose A rig: a straight arm in one piece
 
 
 def arm(side, Mt, S, tilt, up_out, fore_out, hand, hand_rot=0.0):
@@ -77,6 +82,12 @@ def arm(side, Mt, S, tilt, up_out, fore_out, hand, hand_rot=0.0):
     th_f = math.radians(90 + sgn * fore_out) + tilt
     S0, E0 = J['shoulder_' + side], J['elbow_' + side]
     Sw = ap(Mt, S0)
+    if ONE_PIECE:
+        Ma = T(*Sw) @ R(th_u - math.radians(REST['arm_' + side])) @ Sc(S) @ T(*-S0)
+        Ww = ap(Ma, J['wrist_' + side]) - 6 * S * np.array([math.cos(th_u), math.sin(th_u)])
+        h = HANDS[f'{hand}_{side}']
+        Mh = T(*Ww) @ R(th_u - math.radians(h['dir']) + sgn * math.radians(hand_rot)) @ Sc(S) @ T(*[-v for v in h['wrist']])
+        return Ma, None, Mh
     Mu = T(*Sw) @ R(th_u - math.radians(REST['up_' + side])) @ Sc(S) @ T(*-S0)
     Ew = ap(Mu, E0)
     Mf = T(*Ew) @ R(th_f - math.radians(REST['fore_' + side])) @ Sc(S) @ T(*-E0)
@@ -116,17 +127,17 @@ def leg(side, Mt, A, S, lift):
 
 
 # arm poses: side -> (upper arm out, forearm out, hand, hand turn); None = hands in the pockets (the drawing as is)
-DOWN = {'l': (6, 4, 'relajada', 0), 'r': (6, 4, 'relajada', 0)}
+DOWN = {'l': (12, 8, REST_HAND, 0), 'r': (12, 8, REST_HAND, 0)}
 ARM_KEYS = [  # (time, pose); between keys the angles ease, the hand changes half way
     (0.0, DOWN), (3.4, DOWN),
-    (3.9, {'l': (6, 4, 'relajada', 0), 'r': (135, 170, 'abierta', 0)}),          # waves
-    (5.3, {'l': (6, 4, 'relajada', 0), 'r': (135, 170, 'abierta', 0)}),
-    (5.8, {'l': (84, 88, 'senala', 0), 'r': (6, 4, 'relajada', 0)}),             # points away
-    (7.0, {'l': (84, 88, 'senala', 0), 'r': (6, 4, 'relajada', 0)}),
-    (7.5, {'l': (6, 4, 'relajada', 0), 'r': (28, 150, 'pulgar', 0)}),            # thumbs up
-    (8.7, {'l': (6, 4, 'relajada', 0), 'r': (28, 150, 'pulgar', 0)}),
-    (9.1, {'l': (22, 80, 'abierta', 0), 'r': (22, 80, 'abierta', 0)}),           # shrug
-    (10.1, {'l': (22, 80, 'abierta', 0), 'r': (22, 80, 'abierta', 0)}),
+    (3.9, {'l': (6, 4, REST_HAND, 0), 'r': (135, 170, 'abierta', 0)}),          # waves
+    (5.3, {'l': (6, 4, REST_HAND, 0), 'r': (135, 170, 'abierta', 0)}),
+    (5.8, {'l': (84, 88, 'senala', 0), 'r': (6, 4, REST_HAND, 0)}),             # points away
+    (7.0, {'l': (84, 88, 'senala', 0), 'r': (6, 4, REST_HAND, 0)}),
+    (7.5, {'l': (6, 4, REST_HAND, 0), 'r': (160, 160, 'senala', 0)}),            # points up: an idea
+    (8.7, {'l': (6, 4, REST_HAND, 0), 'r': (160, 160, 'senala', 0)}),
+    (9.1, {'l': (40, 80, 'abierta', 0), 'r': (40, 80, 'abierta', 0)}),           # shrug
+    (10.1, {'l': (40, 80, 'abierta', 0), 'r': (40, 80, 'abierta', 0)}),
     (10.5, {'l': (14, 30, 'puno', 0), 'r': (14, 30, 'puno', 0)}),                # gets ready to jump
     (10.9, {'l': (150, 168, 'puno', 0), 'r': (150, 168, 'puno', 0)}),            # celebrates in the air
     (11.6, {'l': (150, 168, 'puno', 0), 'r': (150, 168, 'puno', 0)}),
@@ -255,12 +266,15 @@ def frame_at(t, debug=False):
         draw(img, 'shin_' + side, legs[side][1])
     for side in ('l', 'r'):
         draw(img, 'thigh_' + side, legs[side][0])
-    draw(img, 'torso_libre' if p['arms'] else 'torso', Mt)
+    draw(img, TORSO_FREE if p['arms'] else 'torso', Mt)
     if p['arms']:
         for side in ('l', 'r'):
             up, fore, hand, rot = p['arms'][side]
             Mu, Mf, Mhd = arm(side, Mt, S, p['tilt'], up, fore, hand, rot)
             draw(img, f'hand_{hand}_{side}', Mhd)
+            if ONE_PIECE:
+                draw(img, 'arm_' + side, Mu)
+                continue
             draw(img, 'forearm_' + side, Mf)
             draw(img, 'upperarm_' + side, Mu)
     draw(img, 'head', Mh)
