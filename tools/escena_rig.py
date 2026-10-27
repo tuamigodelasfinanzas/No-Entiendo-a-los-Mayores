@@ -82,6 +82,11 @@ POSES = {
 }
 
 
+CAP_EXT = 0.35          # how far the sleeve's round top goes past the shoulder joint, in sleeve caps (Chiño: the
+                        # shoulder stuck out, 27-10-2026)
+SHOULDER_TAPER = 0.45   # how much narrower the sleeve is at its top (the shoulder's curve), 0 = as drawn
+
+
 def sleeve(m, side, Sw, Ew, Ww, t_sh, S):
     """rig_test.draw_sleeve, computed once per frame and side (it is drawn twice: under the torso and over it), with
     the nearest point of the curve found by a k-d tree instead of brute force. Returns (tile rgba premultiplied, v
@@ -91,7 +96,7 @@ def sleeve(m, side, Sw, Ew, Ww, t_sh, S):
     tf = m.unit(Ww - Ew)
     te = m.unit(m.unit(Ew - Sw) + tf)
     lu, lf = np.linalg.norm(Ew - Sw), np.linalg.norm(Ww - Ew)
-    a = Sw - t_sh * g['cap'] * S * 1.2
+    a = Sw - t_sh * g['cap'] * S * CAP_EXT
     seg = [np.linspace(a, Sw, 12)[:-1],
            m.hermite(Sw, Ew, t_sh * lu, te * lu * 0.9, 50)[:-1],
            m.hermite(Ew, Ww, te * lf * 0.9, tf * lf, 50)[:-1],
@@ -125,7 +130,9 @@ def sleeve(m, side, Sw, Ew, Ww, t_sh, S):
     v[far] = -1e4
     k = g['k']
     rows = ((v + g['cap']) * k).reshape(yy.shape)
-    cols = ((across / S + g['half']) * k).reshape(yy.shape)
+    # the top of the sleeve narrows towards the shoulder, so its round cap doesn't stick out of the torso's shoulder
+    narrow = 1 + SHOULDER_TAPER * np.clip((g['upper'] * 0.35 - v) / (g['upper'] * 0.35 + g['cap']), 0, 1)
+    cols = ((across / S * narrow + g['half']) * k).reshape(yy.shape)
     px = sample_fast(im, rows, cols)
     return px, v.reshape(yy.shape), x0, y0
 

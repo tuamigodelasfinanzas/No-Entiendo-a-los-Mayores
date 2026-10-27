@@ -23,6 +23,7 @@ Lo que Chiño ha pedido o corregido, para que todos los vídeos salgan igual. El
   por delante de la abertura oscura, mientras el puño de la sudadera queda por delante de la mano (`over_opening`).
   Si queda algún hueco, se rellena por debajo con piel del color de la mano (`wrist_join`), sin pintar nunca encima
   de la mano.
+- **Hombros**: curva suave, sin bulto. La parte de arriba de la manga queda corta y se estrecha hacia el hombro (`CAP_EXT`, `SHOULDER_TAPER`).
 - **De pie, la cadera no sube ni baja** (doblaría las rodillas hacia fuera). La vida está en la cabeza y los parpadeos.
 - Los gestos con la mano en la cara se ven mal de cerca. Rascarse la cabeza se hace con la mano detrás de la cabeza.
   "Pensar" se hace con el puño bajo la barbilla, sin tapar la cara.
