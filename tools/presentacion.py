@@ -63,14 +63,15 @@ for _c in K:
 # For E and R the 'r' side is the one on the right of the screen.
 POSES = {
     'quieto': {'l': (12, 8, 'pose', 0), 'r': (12, 8, 'pose', 0)},
-    'senala_arriba': {'l': (10, 6, 'pose', 0), 'r': (128, 172, 'senala', 0)},    # elbow out, hand above the head
+    # arm up with the hand open (Chiño: no pointing finger; arms up always with an open hand)
+    'senala_arriba': {'l': (10, 6, 'pose', 0), 'r': (128, 165, 'abierta~', 0)},
     'cintura': {'l': (42, -38, 'puno', 0), 'r': (42, -38, 'puno', 0)},
     'explica': {'l': (10, 6, 'pose', 0), 'r': (40, 80, 'abierta~', 35)},
     'barbilla': {'l': (14, 10, 'pose', 0), 'r': (-8, -174, 'puno', 0, 'front')},     # fist under the chin
     'rasca': {'l': (10, 6, 'pose', 0), 'r': (128, -158, 'puno', 0, 'behind')},     # hand behind the head
     'saluda': {'l': (10, 6, 'pose', 0), 'r': (132, 150, 'abierta~', 0)},
     'saluda_izq': {'l': (132, 150, 'abierta~', 0), 'r': (10, 6, 'pose', 0)},
-    'celebra': {'l': (150, 168, 'puno', 0), 'r': (150, 168, 'puno', 0)},
+    'celebra': {'l': (145, 160, 'abierta~', 0), 'r': (145, 160, 'abierta~', 0)},
     'encoge': {'l': (40, 80, 'abierta~', 35), 'r': (40, 80, 'abierta~', 35)},
     'encoge_corto': {'l': (24, 62, 'abierta~', 30), 'r': (40, 80, 'abierta~', 35)},   # the hand towards E stays close
 }
@@ -177,7 +178,7 @@ def mix_arm(a, b, x):
     df = b[1] - a[1]
     if abs(df) > 180:                            # over the head: the short way round, not down and back up
         df -= math.copysign(360, df)
-    inward = b[0] - a[0] > 50 and a[1] < 40 and b[1] > 140 and b[2] != 'puno'
+    inward = b[0] - a[0] > 50 and a[1] < 40 and b[1] > 140 and b[2] != 'puno' and a[2] == 'pose' and not (b[0] > 140)
     if inward:                                   # from hanging to up: the hand rises in front of the chest
         df -= 360
     fore = a[1] + df * kf
@@ -186,8 +187,6 @@ def mix_arm(a, b, x):
     src = b if swap else a
     where = 'front' if inward and x < 0.8 else (src[4] if len(src) > 4 else None)
     hand = src[2]
-    if inward and 0.2 < kf < 0.72:               # fingers curled while the hand comes up, they open at the top
-        hand = 'puno'
     return (up, fore, hand, a[3] + (b[3] - a[3]) * ease(x), where)
 
 
