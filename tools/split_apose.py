@@ -43,8 +43,8 @@ HAND_BOX = {'l': (205, 725, 285, 845), 'r': (620, 725, 700, 845)}
 CROTCH = 452
 ELBOW_R = 44                           # half the sleeve's width at the elbow
 # the original face's jaw line (outline included), measured on e-full.jpg
-JAW = [(300, 380), (330, 382), (350, 405), (380, 435), (410, 450), (458, 462), (510, 450), (545, 430), (565, 405),
-       (590, 382), (620, 380)]
+JAW = [(260, 412), (300, 412), (336, 410), (352, 410), (380, 435), (410, 450), (458, 462), (510, 450), (545, 430),
+       (562, 412), (600, 412), (650, 412)]   # under the ears: their lobes hang down to ~y 396
 NECK_CUT = 440                         # the pose-A head goes, the original one goes on top
 
 # hand sheet: cells in e-pose-a.png coordinates (the x4 sheet starts at (10, 920))
