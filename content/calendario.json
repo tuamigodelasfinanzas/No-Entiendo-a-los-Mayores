@@ -3,6 +3,6 @@
   "zona": "Europe/Madrid",
   "franjas": { "A": "13:30", "B": "20:30" },
   "inicio": "2026-10-26",
-  "publicar": "si",
+  "publicar": "no",
   "idioma": "es"
 }
