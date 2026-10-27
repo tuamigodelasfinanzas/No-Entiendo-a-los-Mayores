@@ -209,8 +209,8 @@ SHOULDER_FADE = (-6, 34)    # sleeve rows (from the shoulder joint) over which i
 DOWN = {'l': (12, 8, REST_HAND, 0), 'r': (12, 8, REST_HAND, 0)}
 ARM_KEYS = [  # (time, pose); between keys the angles ease, the hand changes half way
     (0.0, DOWN), (3.4, DOWN),
-    (3.9, {'l': (6, 4, REST_HAND, 0), 'r': (135, 170, 'abierta', 0)}),          # waves
-    (5.3, {'l': (6, 4, REST_HAND, 0), 'r': (135, 170, 'abierta', 0)}),
+    (3.9, {'l': (6, 4, REST_HAND, 0), 'r': (132, 150, 'abierta', 0)}),          # waves: arm up and out, elbow a little bent, hand clear of the head
+    (5.3, {'l': (6, 4, REST_HAND, 0), 'r': (132, 150, 'abierta', 0)}),
     (5.8, {'l': (84, 88, 'senala', 0), 'r': (6, 4, REST_HAND, 0)}),             # points away
     (7.0, {'l': (84, 88, 'senala', 0), 'r': (6, 4, REST_HAND, 0)}),
     (7.5, {'l': (6, 4, REST_HAND, 0), 'r': (160, 160, 'senala', 0)}),            # points up: an idea
@@ -272,7 +272,9 @@ def pose(t):
         p['arms']['r'][1] += 26 * amp * max(s, 0)
     # waving: the forearm goes from side to side
     if 3.9 <= t <= 5.3:
-        p['arms']['r'][1] += 16 * math.sin((t - 3.9) * 2 * math.pi * 1.6)
+        wv = math.sin((t - 3.9) * 2 * math.pi * 1.6) * min((t - 3.9) / 0.2, (5.3 - t) / 0.2, 1)
+        p['arms']['r'][0] += 4 * wv               # the whole arm sways a little, the hand most
+        p['arms']['r'][1] += 11 * wv
         p['head'] += math.radians(3)
     if 5.8 <= t <= 7.0:
         p['head'] -= math.radians(3)
