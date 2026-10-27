@@ -134,10 +134,6 @@ def hands(meta):
             contact = skin & grow(cuff, 12)
             if contact.sum() > 30 and cuff.sum() > 200:
                 wy, wx = np.argwhere(contact).mean(0)
-            if name == 'senala':            # pointing: the index finger carries on the forearm's line
-                pts = np.argwhere(skin)
-                ty, tx = pts[((pts - [wy, wx]) ** 2).sum(1).argmax()]
-                d = math.degrees(math.atan2(ty - wy, tx - wx))
             k = math.sqrt(target * HAND_SIZE.get(name, 1.0) / skin.sum())
             # only the hand: the sheet's cuff goes, the hand slides into E's own cuff
             if HAND_JOIN:                   # creases split the hand into islands: join them, fill what they enclose
@@ -152,7 +148,19 @@ def hands(meta):
             n = f'hand_{name}_{side}'
             img.save(os.path.join(OUT, n + '.png'), optimize=True)
             meta['pieces'][n] = {'x': 0, 'y': 0}
-            meta['hands'][f'{name}_{side}'] = {'wrist': [wx * k, wy * k], 'dir': d}
+            wx, wy = wx * k, wy * k
+            if name == 'senala':
+                # the pointing hand's cuff in the sheet covers half the palm, so the contact sits mid-palm and, pointing
+                # up, half the fist would go into the sleeve: the wrist is the hand's back edge (a little inside),
+                # its axis goes to the tip of the index
+                al = np.asarray(img)[..., 3] > 128
+                ys, xs = np.nonzero(al)
+                back = xs.max() if side == 'r' else xs.min()
+                wx = back - 7 if side == 'r' else back + 7
+                wy = float(np.median(ys[np.abs(xs - back) < 8]))
+                i = ((xs - wx) ** 2 + (ys - wy) ** 2).argmax()
+                d = math.degrees(math.atan2(ys[i] - wy, xs[i] - wx))
+            meta['hands'][f'{name}_{side}'] = {'wrist': [float(wx), float(wy)], 'dir': d}
 
 
 def main():
