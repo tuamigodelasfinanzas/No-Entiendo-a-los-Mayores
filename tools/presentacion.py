@@ -245,7 +245,7 @@ def mouth(img, c, Mh, talk):
     """While speaking: the inside of the mouth under the lip line, and the drawing under it (jaw.png) slid down."""
     j = MOUTH[c]
     d = max(0.0, min(1.0, talk)) * j['d'] * 1.3
-    if d < 0.4:
+    if d < 0.25:
         return
     ox, ow, y = j['ox'], j['ow'], j['y']
     top = [(ox - ow + 2 * ow * u, y - 1 - 1.0 * math.sin(math.pi * u)) for u in np.linspace(0, 1, 16)]
@@ -287,20 +287,21 @@ DUR = json.load(open(os.path.join(DIR, 'voces/duraciones.json')))
 SAYS = {'01': 0.35, '02': 3.3, '03': 5.75, '04': 7.35, '05': 12.3, '06': 16.45, '07': 20.8, '08': 23.15}  # line -> start
 TOTAL = 29.0
 # world: E on the left, R on the right, both standing on the same floor
-WORLD = {'e': (300, 1620, 0.92), 'r': (780, 1620, 0.92)}
+# R is taller than E (Chiño's photo of them: E is about 87 % of R's height); the drawings are almost the same height
+WORLD = {'e': (300, 1620, 0.86), 'r': (780, 1620, 0.98)}
 # shots: (start, camera centre x, y, zoom, push over the shot)
 SHOTS = [
-    (0.0, 790, 890, 1.75, 0.04),     # 1 R, close up: "E, ¿qué estamos haciendo aquí?"
-    (3.0, 360, 985, 1.35, 0.03),     # 2 E comes in pointing up
+    (0.0, 790, 845, 1.75, 0.04),     # 1 R, close up: "E, ¿qué estamos haciendo aquí?"
+    (3.0, 360, 1025, 1.35, 0.03),     # 2 E comes in pointing up
     (5.6, 540, 1040, 1.22, 0.02),    # 3 both: "¿Todo el mundo?"
-    (7.2, 350, 985, 1.38, 0.03),     # 4 E, hands on the hips: "Todo..."
+    (7.2, 350, 1025, 1.38, 0.03),     # 4 E, hands on the hips: "Todo..."
     (9.4, 540, 1000, 1.12, 0.03),    # 5 E explains, the things he says pop up over them
-    (12.1, 740, 935, 1.55, 0.04),    # 6 R, fist under the chin
+    (12.1, 740, 885, 1.55, 0.04),    # 6 R, fist under the chin
     (14.6, 540, 1040, 1.22, 0.0),    # 7 both: an awkward silence (crickets)
-    (16.2, 345, 920, 1.6, 0.03),     # 8 E scratches his head, then points up
+    (16.2, 345, 965, 1.6, 0.03),     # 8 E scratches his head, then points up
     (18.3, 540, 990, 1.05, 0.03),    # 9 both: "...por eso vamos a investigarlo"
     (20.6, 545, 1070, 1.36, 0.03),    # 10 both to camera: "Esto puede salir muy bien..."
-    (23.0, 430, 1010, 1.42, 0.03),   # 11 E: "¡O muy divertido!"
+    (23.0, 430, 1040, 1.42, 0.03),   # 11 E: "¡O muy divertido!"
     (25.4, 540, 1000, 1.0, 0.02),    # 12 both wave and celebrate, end texts
 ]
 ARMS = {  # kid -> [(time, pose)]; between keys the arm moves in 0.35 s
@@ -333,13 +334,23 @@ def keyed(keys, t, dur=MOVE):
 
 
 def envelope(path, fps=FPS):
-    raw = subprocess.run(['ffmpeg', '-v', 'error', '-i', path, '-f', 'f32le', '-ac', '1', '-ar', '24000', '-'],
+    """How open the mouth is, frame by frame, from the loudness of the voice. Smoothed like a real jaw (opens in
+    ~40 ms, closes in ~65 ms) and compressed, so it doesn't flap fully open and shut from one frame to the next."""
+    sr = 24000
+    raw = subprocess.run(['ffmpeg', '-v', 'error', '-i', path, '-f', 'f32le', '-ac', '1', '-ar', str(sr), '-'],
                          check=True, capture_output=True).stdout
     a = np.frombuffer(raw, np.float32)
-    n = 24000 // fps
-    rms = np.array([np.sqrt(np.mean(a[i:i + n] ** 2)) for i in range(0, len(a), n)])
-    rms = rms / (np.percentile(rms, 90) or 1)
-    return np.clip((rms - 0.12) / 0.7, 0, 1)
+    hop = sr // 200                                    # 5 ms
+    rms = np.array([np.sqrt(np.mean(a[i:i + hop * 2] ** 2)) for i in range(0, len(a), hop)])
+    rms = np.clip(rms / (np.percentile(rms, 95) or 1), 0, 1.2)
+    att, rel = 1 - math.exp(-1 / (0.040 * 200)), 1 - math.exp(-1 / (0.065 * 200))
+    env, y = np.zeros_like(rms), 0.0
+    for i, v in enumerate(rms):
+        y += (v - y) * (att if v > y else rel)
+        env[i] = y
+    env = np.clip((env - 0.16) / 0.84, 0, 1) ** 0.8 * 0.85
+    idx = (np.arange(int(len(env) / 200 * fps) + 1) * 200 / fps).astype(int)
+    return env[np.clip(idx, 0, len(env) - 1)]
 
 
 ENV = {}
