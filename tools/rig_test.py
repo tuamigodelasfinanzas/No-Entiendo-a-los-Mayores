@@ -71,7 +71,7 @@ for _sd in ('l', 'r'):
     REST['up_' + _sd] = math.degrees(ang(J['elbow_' + _sd] - J['shoulder_' + _sd]))
     REST['arm_' + _sd] = math.degrees(ang(J['wrist_' + _sd] - J['shoulder_' + _sd]))
     REST['fore_' + _sd] = math.degrees(ang(J['wrist_' + _sd] - J['elbow_' + _sd]))
-ONE_PIECE = 'arm_l' in meta['pieces']          # pose A rig: a straight arm in one piece
+ONE_PIECE = 'upperarm_l' not in meta['pieces']   # pose A rig without layered sleeves: a straight arm in one piece
 
 
 def arm(side, Mt, S, tilt, up_out, fore_out, hand, hand_rot=0.0):
@@ -266,8 +266,15 @@ def frame_at(t, debug=False):
         draw(img, 'shin_' + side, legs[side][1])
     for side in ('l', 'r'):
         draw(img, 'thigh_' + side, legs[side][0])
+    if not ONE_PIECE:                               # layered sleeves go behind the torso's round shoulder
+        for side in ('l', 'r'):
+            up, fore, hand, rot = p['arms'][side]
+            Mu, Mf, Mhd = arm(side, Mt, S, p['tilt'], up, fore, hand, rot)
+            draw(img, f'hand_{hand}_{side}', Mhd)
+            draw(img, 'forearm_' + side, Mf)
+            draw(img, 'upperarm_' + side, Mu)
     draw(img, TORSO_FREE if p['arms'] else 'torso', Mt)
-    if p['arms']:
+    if p['arms'] and ONE_PIECE:
         for side in ('l', 'r'):
             up, fore, hand, rot = p['arms'][side]
             Mu, Mf, Mhd = arm(side, Mt, S, p['tilt'], up, fore, hand, rot)
