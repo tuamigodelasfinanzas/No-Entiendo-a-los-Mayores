@@ -378,6 +378,8 @@ def kid(img, c, x, floor, S, p):
     for side, (hand, Mhd, sl, where) in arms.items():
         if where != 'front':
             paste_sleeve(img, sl, fade=m.SHOULDER_FADE, mask=tmask)
+    shoulder_fill(img, c, tmask, [a[2] for a in arms.values()],
+                  [ap(Mt, J['shoulder_' + s]) for s in ('l', 'r')], S)
     m.draw(img, 'head', Mh)
     mouth(img, c, Mh, p.get('talk', 0))
     if p.get('blink'):
@@ -389,6 +391,59 @@ def kid(img, c, x, floor, S, p):
             paste_sleeve(img, sl)
             paste_sleeve(img, sl, fade=m.SHOULDER_FADE, mask=tmask)
     return Mh
+
+
+SMOOTH = 16                # px of the drawing: how round the shoulder's outline is made (Chiño: no steps, 27-10-2026)
+LINE = {'e': (110, 18, 22), 'r': (14, 48, 120)}      # the hoodie's outline
+
+
+def shoulder_fill(img, c, tmask, sleeves, shoulders, S):
+    """Where the sleeve's top meets the torso's shoulder their outlines make a step. Fills it in with the hoodie, so
+    the outline from the hood down the arm is one continuous curve, and redraws the outline along it."""
+    from scipy import ndimage
+    A = tmask / 255
+    for sl in sleeves:
+        if sl is not None:
+            px, v, x0, y0 = sl
+            h, w = px.shape[:2]
+            A[y0:y0 + h, x0:x0 + w] = np.maximum(A[y0:y0 + h, x0:x0 + w], px[..., 3] / 255)
+    r = int(150 * S)
+    disk = lambda n: np.hypot(*np.mgrid[-n:n + 1, -n:n + 1]) <= n
+    for Sx, Sy in shoulders:
+        x0, y0 = max(int(Sx) - r, 0), max(int(Sy) - r, 0)
+        x1, y1 = min(int(Sx) + r, W), min(int(Sy) + r, H)
+        if x1 - x0 < 8 or y1 - y0 < 8:
+            continue
+        a = A[y0:y1, x0:x1]
+        yy, xx = np.mgrid[y0:y1, x0:x1]
+        near = np.clip((120 * S - np.hypot(xx - Sx, yy - Sy)) / (25 * S), 0, 1)
+        near *= np.clip((Sy + 15 * S - yy) / (15 * S), 0, 1)            # not down in the armpit
+        # closing: fills the notches narrower than the disk, leaves the rest of the outline where it was
+        n = max(int(SMOOTH * S), 2)
+        body = np.pad(a > 0.5, n + 1)
+        closed = ndimage.binary_erosion(ndimage.binary_dilation(body, disk(n)), disk(n))[n + 1:-n - 1, n + 1:-n - 1]
+        A2 = np.maximum(a, ndimage.gaussian_filter(closed.astype(float), 0.8) * near)
+        grown = (A2 - a) > 0.05
+        if not grown.any():
+            continue
+        tile = np.asarray(img.crop((x0, y0, x1, y1)), float)
+        # the hoodie's colour from inside it, away from the outline
+        inner = ndimage.binary_erosion(a > 0.95, iterations=max(int(7 * S), 1)).astype(float)
+        sig = 6 * S
+        wsum = ndimage.gaussian_filter(inner, sig)
+        col = np.dstack([ndimage.gaussian_filter(tile[..., i] * inner, sig) for i in range(3)]) / np.maximum(wsum, 1e-4)[..., None]
+        col = np.where(wsum[..., None] > 1e-4, col, COLOR[c])
+        # the old outline at the step goes too: a few px around what grew are repainted
+        k = ndimage.binary_dilation(grown, iterations=max(int(6 * S), 1)).astype(float)
+        k = ndimage.gaussian_filter(k, 1.0) * near
+        lw = max(2 * S, 1.5)                                            # the outline's width
+        dist = ndimage.distance_transform_edt(A2 > 0.5)
+        edge = np.clip(1 - (dist - lw) / 1.2, 0, 1)
+        new = col * (1 - edge[..., None]) + np.array(LINE[c], float) * edge[..., None]
+        target = tile[..., :3] * (1 - A2[..., None]) + new * A2[..., None]
+        rgb = tile[..., :3] * (1 - k[..., None]) + target * k[..., None]
+        out = np.dstack([rgb, np.maximum(tile[..., 3], A2 * 255 * k)])
+        img.paste(Image.fromarray(np.clip(out, 0, 255).astype(np.uint8), 'RGBA'), (x0, y0))
 
 
 def mouth(img, c, Mh, talk):
