@@ -15,7 +15,13 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, 'tools'))
 DIR = os.path.join(ROOT, 'content/especiales/presentacion')
 W, H, FPS = 1080, 1920, 30
-FONT = os.environ.get('FREDOKA', '/tmp/claude-0/fonts/fredoka-700.ttf')
+FONT = os.environ.get('FREDOKA', os.path.join(ROOT, 'out/fredoka-700.ttf'))
+if not os.path.exists(FONT):                    # the channel's font (@fontsource/fredoka) as a TTF for Pillow
+    from fontTools.ttLib import TTFont
+    os.makedirs(os.path.dirname(FONT), exist_ok=True)
+    _f = TTFont(os.path.join(ROOT, 'node_modules/@fontsource/fredoka/files/fredoka-latin-700-normal.woff2'))
+    _f.flavor = None
+    _f.save(FONT)
 
 
 def load(c):
@@ -209,7 +215,7 @@ def kid(img, c, x, floor, S, p):
 def mouth(img, c, Mh, talk):
     """While speaking: the inside of the mouth under the lip line, and the drawing under it (jaw.png) slid down."""
     j = MOUTH[c]
-    d = max(0.0, min(1.0, talk)) * j['d']
+    d = max(0.0, min(1.0, talk)) * j['d'] * 1.3
     if d < 0.4:
         return
     ox, ow, y = j['ox'], j['ow'], j['y']
@@ -263,8 +269,8 @@ SHOTS = [
     (12.1, 740, 935, 1.55, 0.04),    # 6 R, fist under the chin
     (14.6, 540, 1040, 1.22, 0.0),    # 7 both: an awkward silence (crickets)
     (16.2, 345, 920, 1.6, 0.03),     # 8 E scratches his head, then points up
-    (18.3, 540, 1040, 1.2, 0.03),    # 9 both: "...por eso vamos a investigarlo"
-    (20.6, 540, 1060, 1.3, 0.03),    # 10 both to camera: "Esto puede salir muy bien..."
+    (18.3, 540, 990, 1.05, 0.03),    # 9 both: "...por eso vamos a investigarlo"
+    (20.6, 545, 1070, 1.36, 0.03),    # 10 both to camera: "Esto puede salir muy bien..."
     (23.0, 430, 1010, 1.42, 0.03),   # 11 E: "¡O muy divertido!"
     (25.4, 540, 1000, 1.0, 0.02),    # 12 both wave and celebrate, end texts
 ]
@@ -547,8 +553,10 @@ def overlays(img, t):
             img.alpha_composite(ic, (int(x - size / 2), int(y - size / 2)))
             label(img, word, x, y + 145, 44, (40, 30, 40), (255, 255, 255), scale=sc, pad=(18, 8))
     # subtitles: what is being said, in big letters, with the colour of who says it (no names)
+    starts = sorted(SAYS.values())
     for lid, at in SAYS.items():
-        if at - 0.05 <= t <= at + DUR[lid] + 0.3:
+        nxt = min([x for x in starts if x > at] + [TOTAL])
+        if at - 0.05 <= t <= min(at + DUR[lid] + 0.3, nxt - 0.06):    # one at a time
             c = LINES[lid]['who']
             label(img, LINES[lid]['text'].replace('...', '…'), W / 2, 1600, 74, (30, 25, 35), (255, 255, 255),
                   border=COLOR[c], scale=min(1.0, 0.85 + (t - at + 0.05) * 3))
