@@ -23,7 +23,9 @@ Corte seco entre planos y un empuje lento (2,5 %) durante cada línea, para que 
 
 ## Poses (las elige `src/director.mjs`)
 
-Quien habla toma una pose según la frase: cara de sorpresa → `encoge` / `mano-frente`; duda → `rasca` / `mano-barbilla`; pregunta → `encoge` / `palmas-arriba`; exclamación → `senala` / `senala-a-e`; explicación → `explica`, `senala`, `idea`...; feliz → `pulgar-arriba`, `corazon`. Quien escucha cambia solo de vez en cuando (`manos-cadera`, `brazos-cruzados`, `mano-barbilla` o el dibujo original). Una línea puede pedir una concreta con `pose` / `pose_otro`; las de movimiento (`salta`, `corre`, `sentado`, `atandose`, `con-balon`, `caminando`, `leyendo`) solo salen si el guion las pide.
+Quien habla toma una pose según la frase: cara de sorpresa → `encoge` / `palmas-arriba`; duda → `encoge` / `brazos-cruzados`; pregunta → `encoge` / `palmas-arriba`; exclamación → `senala` / `senala-a-e`; explicación → `explica`, `senala`, `idea`...; feliz → `pulgar-arriba`, `corazon`. El cambio es un fundido corto (0,24 s), sin rebote, y quien acaba de cambiar mantiene la pose al menos una frase más. Quien escucha cambia solo de vez en cuando (`manos-cadera`, `brazos-cruzados` o el dibujo original). Una línea puede pedir una concreta con `pose` / `pose_otro`; las de movimiento (`salta`, `corre`, `sentado`, `atandose`, `con-balon`, `caminando`, `leyendo`) y las de mano en la cara (`rasca`, `susurra`, `mano-barbilla`, `mano-frente`, que se ven peor de cerca) solo salen si el guion las pide.
+
+En todas las poses el cuello y la abertura de la capucha son los del dibujo original (van por encima del cuerpo de la pose), así la unión con la cabeza es siempre la de Chiño.
 
 Poses de E: explica, senala, brazos-cruzados, encoge, rasca, manos-cadera, salta, corre, susurra, pulgar-arriba, idea, corazon. Poses de R: mano-barbilla, levanta-mano, senala-a-e, brazos-cruzados, palmas-arriba, mano-frente, con-balon, caminando, sentado, senala-arriba, atandose, leyendo. La tercera hoja (`poses-3.png`) está guardada pero sin usar: sus figuras son muy pequeñas y con la cabeza girada.
 

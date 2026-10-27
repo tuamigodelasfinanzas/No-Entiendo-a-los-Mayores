@@ -10,6 +10,8 @@ each pose only gives the body under it. Per pose:
     the drawing, Chiño's rule); poses with the feet elsewhere (jumping, running, sitting...) keep the head scale,
   - the pose's own head is removed, and the hands that go over the face are kept in a "front" layer that is
     drawn on top of the original head,
+  - above the neck only the arms of the listed boxes stay, and the collar of the original drawing (neck and hood
+    opening, body.png) goes over the pose, so the joint with the head is always the one of the drawing,
   - brand-like marks on the sneakers become plain white leather (originality rule of docs/biblia-personajes.md).
 The sheets are small (each figure is about 300 px tall against 1100 px of the originals), so the poses are
 upscaled: they look a little softer than the head."""
@@ -48,7 +50,7 @@ POSES = {
         'r-con-balon': ((525, 122, 747, 553), 'stand', []),
         'r-caminando': ((771, 122, 990, 557), 'stand', []),
         'r-sentado': ((531, 656, 754, 981), 'head', []),
-        'r-senala-arriba': ((759, 594, 997, 1021), 'stand', [('keep', 590, 40, 896, 470)]),
+        'r-senala-arriba': ((759, 594, 997, 1021), 'stand', [('keep', 650, 40, 896, 470)]),
         'r-atandose': ((539, 1094, 736, 1435), 'head', []),
         'r-leyendo': ((798, 1059, 993, 1460), 'stand', []),
     },
@@ -243,8 +245,13 @@ def main():
             rgb_u = unbrand(rgb, ~bg, soles_c, ys.min())
             big = place(Image.fromarray(rgb_u.clip(0, 255).astype(np.uint8)), 'RGB')
             big = big.filter(ImageFilter.UnsharpMask(radius=2.5, percent=60, threshold=2))
-            al = Image.fromarray(np.where(bg, 0, 255).astype(np.uint8)).filter(ImageFilter.MinFilter(3))
-            al = np.asarray(place(al, 'L').filter(ImageFilter.GaussianBlur(1.1))).astype(float)
+            # the outline: the cut-out is ~4x smaller than the frame, so a plain upscale gives stairs. Blur it at
+            # the size of a sheet pixel and cut it again (smoothstep): round, clean edges
+            al0 = Image.new('L', (W, Hf))
+            al0.paste(Image.fromarray(np.where(bg, 0, 255).astype(np.uint8)).filter(ImageFilter.MinFilter(3)).resize(up, Image.BICUBIC), at)
+            al = np.asarray(al0.filter(ImageFilter.GaussianBlur(float(0.7 / s)))).astype(float) / 255
+            al = np.clip((al - 0.5) / 0.12 + 0.5, 0, 1)
+            al = 255 * al * al * (3 - 2 * al)
             # the pose's own head: the original head silhouette put where it was found, a bit bigger, above the chin
             hs = Image.new('L', cell.size)
             hsil = h.getchannel('A').crop(hb).resize((round(h.crop(hb).width * s_h), round(h.crop(hb).height * s_h)), Image.LANCZOS)
@@ -256,6 +263,9 @@ def main():
             oh[:rig['h']] = (np.asarray(h.getchannel('A')) > 40) * 255
             oh = dilate(Image.fromarray(oh), 60)
             hs = np.maximum(hs, np.asarray(oh.filter(ImageFilter.GaussianBlur(4))).astype(float) / 255)
+            near = np.zeros((Hf, W), np.uint8)
+            near[:rig['h']] = (np.asarray(h.getchannel('A')) > 40) * 255
+            near = np.asarray(dilate(Image.fromarray(near), 36)) > 127
             # sleeve colour (for the hands drawn in front of the head)
             bf = np.asarray(big).astype(float)
             r_, g_, b_ = bf[..., 0], bf[..., 1], bf[..., 2]
@@ -272,7 +282,7 @@ def main():
             for b in front:
                 if b[0] == 'keep':
                     x0, y0, x1, y1 = b[1:]
-                    arm = ~hair[y0:y1, x0:x1]
+                    arm = ~(hair & near)[y0:y1, x0:x1]
                     hs[y0:y1, x0:x1] *= 1 - arm
             # the hood never goes (shoulders of a jumping kid come up near the chin)
             hs = hs * (1 - sleeve)
@@ -297,7 +307,39 @@ def main():
             out = os.path.join(CH, cid, 'poses', name[2:])
             if os.environ.get('POSES_DEBUG'):
                 Image.fromarray(np.dstack([np.asarray(big), al]).clip(0, 255).astype(np.uint8), 'RGBA').save(os.path.join(os.environ['POSES_DEBUG'], name + '.png'))
-            rgba = np.dstack([np.asarray(big).astype(float), body_a]).clip(0, 255).astype(np.uint8)
+            # above the neck only the arms of the keep/front boxes stay: any other bit of the sheet there is its
+            # hair or its face
+            allowed = np.zeros((Hf, W))
+            for b in front:
+                x0, y0, x1, y1 = b[1:] if b[0] == 'keep' else b
+                y1 = max(y1, rig['chin'] + 30)       # down to the shoulder, so the arm has no cut
+                allowed[y0:y1, x0:x1] = 1 if b[0] != 'keep' else ~(hair & near)[y0:y1, x0:x1]
+            allowed = np.asarray(Image.fromarray((allowed * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(2))).astype(float) / 255
+            # the hood and the shoulders stay (closed, so the light folds of the hood stay with it)
+            hood = Image.fromarray(((sleeve > 0.5) * 255).astype(np.uint8)).filter(ImageFilter.MaxFilter(9)).filter(ImageFilter.MinFilter(9))
+            hood = np.asarray(hood.filter(ImageFilter.GaussianBlur(1.5))).astype(float) / 255
+            above = np.clip((rig['chin'] + 16 - yy) / 12, 0, 1) * (1 - hood)
+            body_a = body_a * (1 - above * (1 - allowed))
+            # crumbs of the sheet's hair or hood that are left next to the head go (an opening of the mask)
+            op = Image.fromarray(body_a.clip(0, 255).astype(np.uint8)).filter(ImageFilter.MinFilter(9)).filter(ImageFilter.MaxFilter(9))
+            op = np.asarray(op.filter(ImageFilter.GaussianBlur(1))).astype(float)
+            cut = np.clip((rig['chin'] + 10 - yy) / 10, 0, 1) * (1 - allowed)
+            body_a = body_a * (1 - cut) + np.minimum(body_a, op) * cut
+            # round the neck the collar of the drawing is the only one: nothing of the sheet's hood sticks out of it
+            xx = np.arange(W)[None, :]
+            zone = np.clip((165 - abs(xx - rig['pivot'][0])) / 35, 0, 1) * np.clip((rig['chin'] + 30 - yy) / 15, 0, 1)
+            body_a = body_a * (1 - zone * (1 - allowed))
+            # the collar: the hood opening and the neck of the original drawing go over the pose, so the joint under
+            # the chin is always the one Chiño drew (fades out before the drawstrings)
+            ob = np.zeros((Hf, W, 4))
+            ob[:rig['h']] = np.asarray(Image.open(os.path.join(CH, cid, 'body.png')).convert('RGBA')).astype(float)
+            xx = np.arange(W)[None, :]
+            cm = np.clip((rig['chin'] + 62 - yy) / 18, 0, 1) * (yy > rig['chin'] - 40) * np.clip((165 - abs(xx - rig['pivot'][0])) / 35, 0, 1)
+            ya = ob[..., 3] / 255 * cm * (1 - allowed * (yy < rig['chin']))
+            ba = body_a / 255
+            oa = ya + ba * (1 - ya)
+            col = (ob[..., :3] * ya[..., None] + np.asarray(big).astype(float) * (ba * (1 - ya))[..., None]) / np.maximum(oa, 1e-6)[..., None]
+            rgba = np.dstack([col, oa * 255]).clip(0, 255).astype(np.uint8)
             rgba[rgba[..., 3] == 0] = 0
             Image.fromarray(rgba, 'RGBA').save(out + '.png', optimize=True)
             entry = {'h': Hf, 'feet': round(soles_f - (SOLES - rig['feet']))}

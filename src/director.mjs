@@ -53,9 +53,9 @@ const POSES = {
     secreto: ['explica'], escucha: ['manos-cadera', 'brazos-cruzados', null], cierre: ['encoge'],
   },
   r: {
-    sorpresa: ['mano-frente', 'palmas-arriba'], duda: ['mano-barbilla', 'palmas-arriba'], piensa: ['mano-barbilla'], feliz: ['senala-arriba', 'levanta-mano'],
-    pregunta: ['palmas-arriba', 'levanta-mano', 'mano-barbilla'], exclama: ['senala-a-e', 'mano-frente'], explica: ['senala-a-e', 'senala-arriba', 'palmas-arriba'],
-    secreto: ['mano-barbilla'], escucha: ['brazos-cruzados', 'mano-barbilla', null], cierre: ['palmas-arriba'],
+    sorpresa: ['palmas-arriba', 'levanta-mano'], duda: ['palmas-arriba', 'brazos-cruzados'], piensa: ['brazos-cruzados'], feliz: ['senala-arriba', 'levanta-mano'],
+    pregunta: ['palmas-arriba', 'levanta-mano'], exclama: ['senala-a-e', 'senala-arriba'], explica: ['senala-a-e', 'senala-arriba', 'palmas-arriba'],
+    secreto: ['brazos-cruzados'], escucha: ['brazos-cruzados', null], cierre: ['palmas-arriba'],
   },
 };
 const FACE_KIND = { sorprendido: 'sorpresa', asustado: 'sorpresa', dudoso: 'duda', confundido: 'duda', pensativo: 'piensa', feliz: 'feliz', orgulloso: 'feliz', sonrisa: 'feliz' };
@@ -98,7 +98,7 @@ export function build(script, o = {}) {
   // shot plan: the hook in two-shot; then the speaker in medium shot, a close-up for short punch lines,
   // and back to the two-shot for reactions and the ending
   let prevShot = 'dos';
-  const poseNow = { e: null, r: null }, lastKind = { e: null, r: null };
+  const poseNow = { e: null, r: null }, lastKind = { e: null, r: null }, changed = { e: -9, r: -9 };
   speech.forEach((sp, i) => {
     const { it, who } = sp;
     lines.push({ who, text: it[who], gap: 0.28 + sp.pause });
@@ -134,14 +134,14 @@ export function build(script, o = {}) {
         sfx.push({ s: em === 'bombilla' ? 'ding' : 'pop', l: i, t: 0.1, g: 0.45 });
       }
     }
-    // poses: the speaker's body says what the line is, on the first syllable (with a small dip and rebound so
-    // the change reads as a movement, not a cut); the listener answers a moment later, and only now and then.
-    // Two lines of the same kind in a row by the same kid keep the pose: fewer, clearer changes
+    // poses: the speaker's body says what the line is, on the first syllable (a short dissolve, no bounce); the
+    // listener answers a moment later, and only now and then. Two lines of the same kind in a row by the same kid
+    // keep the pose, and a kid who has just changed keeps it for one more line: few, calm changes
     for (const w of KIDS) {
       const talking = speakers.includes(w);
       const kind = talking ? (who === 'ambos' ? 'cierre' : lineKind(it, it[who])) : 'escucha';
       let next;
-      if (talking) next = it.pose && who !== 'ambos' ? it.pose : lastKind[w] === kind && poseNow[w] ? poseNow[w] : POSES[w][kind];
+      if (talking) next = it.pose && who !== 'ambos' ? it.pose : (lastKind[w] === kind || i - changed[w] < 2) && poseNow[w] ? poseNow[w] : POSES[w][kind];
       else next = it.pose_otro ?? (i % 3 === 0 || poseNow[w] === null || !POSES[w].escucha.includes(poseNow[w]) ? POSES[w].escucha : [poseNow[w]]);
       lastKind[w] = talking ? kind : null;
       if (Array.isArray(next)) {
@@ -150,8 +150,9 @@ export function build(script, o = {}) {
       }
       if (next !== poseNow[w]) {
         const t0 = talking ? -0.1 : 0.35;
-        keys[w].push({ ...at, t: t0, pose0: poseNow[w], pose: next, poseK: 0, e: 'step' }, { ...at, t: t0 + 0.2, poseK: 1, e: 'back' });
+        keys[w].push({ ...at, t: t0, pose0: poseNow[w], pose: next, poseK: 0, e: 'step' }, { ...at, t: t0 + 0.24, poseK: 1, e: 'io' });
         poseNow[w] = next;
+        changed[w] = i;
       }
     }
     if (it.tarjeta) cards.push({ i, ...it.tarjeta });
