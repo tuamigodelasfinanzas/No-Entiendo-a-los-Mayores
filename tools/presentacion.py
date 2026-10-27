@@ -43,7 +43,7 @@ T, Rm, Sc, ap, ease = K['e'].T, K['e'].R, K['e'].Sc, K['e'].ap, K['e'].ease
 # For E and R the 'r' side is the one on the right of the screen.
 POSES = {
     'quieto': {'l': (12, 8, 'pose', 0), 'r': (12, 8, 'pose', 0)},
-    'senala_arriba': {'l': (10, 6, 'pose', 0), 'r': (160, 160, 'senala', 0)},
+    'senala_arriba': {'l': (10, 6, 'pose', 0), 'r': (128, 172, 'senala', 0)},    # elbow out, hand above the head
     'cintura': {'l': (42, -38, 'puno', 0), 'r': (42, -38, 'puno', 0)},
     'explica': {'l': (10, 6, 'pose', 0), 'r': (40, 80, 'abierta~', 35)},
     'barbilla': {'l': (14, 10, 'pose', 0), 'r': (-8, -174, 'puno', 0, 'front')},     # fist under the chin
@@ -139,15 +139,44 @@ def paste_sleeve(frame, sl, fade=None, mask=None):
 
 
 def mix_arm(a, b, x):
-    """Angles ease from pose a to pose b (x 0..1); the forearm leads, the elbow folds a little on the way and the hand
-    changes early, as in rig_test.arms_at."""
-    k = ease(x)
-    ku, kf = ease((x - 0.12) / 0.88), ease(x / 0.88)
-    fold = 45 * min(abs(b[0] - a[0]) / 90, 1) * math.sin(math.pi * k)
-    swap = 0.25 if b[2] == 'pose' else 0.3
-    src = a if k < swap else b
-    return (a[0] + (b[0] - a[0]) * ku, a[1] + (b[1] - a[1]) * kf + fold * (1 if b[1] >= a[1] else -0.3),
-            src[2], a[3] + (b[3] - a[3]) * k, src[4] if len(src) > 4 else None)
+    """Angles from pose a to pose b (x 0..1), the way a child moves an arm. Raising it, the elbow bends first and
+    brings the hand up in front of the shoulder, then the upper arm lifts and the forearm opens up (the hand never
+    swings up on a straight arm). Lowering it, the upper arm drops first and the hand trails behind. The hand
+    changes while it is close to the body."""
+    if b[0] - a[0] > 50:                         # raising
+        ku, kf = ease((x - 0.2) / 0.8), ease(x / 0.6)
+        swap = kf > 0.35
+    elif a[0] - b[0] > 50:                       # lowering
+        ku, kf = ease(x / 0.8), ease((x - 0.15) / 0.85)
+        swap = ku > 0.55
+    else:
+        ku = kf = ease(x)
+        swap = ku > 0.4
+    up = a[0] + (b[0] - a[0]) * ku
+    df = b[1] - a[1]
+    if abs(df) > 180:                            # over the head: the short way round, not down and back up
+        df -= math.copysign(360, df)
+    inward = b[0] - a[0] > 50 and a[1] < 40 and b[1] > 140 and b[2] != 'puno'
+    if inward:                                   # from hanging to up: the hand rises in front of the chest
+        df -= 360
+    fore = a[1] + df * kf
+    if not (inward or a[0] < 0 or b[0] < 0 or a[1] < 0 or b[1] < 0):
+        fore = max(fore, up - 6)                 # the elbow never bends backwards
+    src = b if swap else a
+    where = 'front' if inward and x < 0.8 else (src[4] if len(src) > 4 else None)
+    hand = src[2]
+    if inward and 0.2 < kf < 0.72:               # fingers curled while the hand comes up, they open at the top
+        hand = 'puno'
+    return (up, fore, hand, a[3] + (b[3] - a[3]) * ease(x), where)
+
+
+def settle(a, b, s):
+    """After a big move the arm overshoots a little and settles (s: seconds since it arrived)."""
+    if s > 0.6 or abs(b[0] - a[0]) < 50:
+        return 0.0, 0.0
+    sg = 1 if b[0] > a[0] else -1
+    d = math.exp(-7 * s)
+    return sg * 4 * d * math.sin(13 * s), sg * 7 * d * math.sin(13 * s - 0.7)
 
 
 # ---------------------------------------------------------------- one kid
@@ -281,7 +310,7 @@ ARMS = {  # kid -> [(time, pose)]; between keys the arm moves in 0.35 s
     'r': [(0, 'quieto'), (5.65, 'encoge'), (7.0, 'quieto'), (12.1, 'barbilla'), (16.0, 'quieto'),
           (20.7, 'explica'), (22.9, 'quieto'), (25.5, 'saluda')],
 }
-MOVE = 0.35
+MOVE = 0.6
 LOOK = {'e': [(0, 0.04), (3.3, 0.0), (5.7, 0.05), (7.2, 0.0), (12.2, 0.05), (16.3, -0.03), (20.6, 0.0), (21.0, 0.04), (23.0, 0.0)],
         'r': [(0, 0.0), (3.2, -0.05), (5.7, 0.0), (7.1, -0.05), (12.1, 0.0), (14.6, -0.06), (20.6, 0.0), (23.0, -0.05), (25.4, 0.0)]}
 BLINK = {'e': [1.2, 4.1, 6.9, 9.0, 11.6, 13.9, 15.6, 19.4, 22.1, 24.9, 27.8], 'r': [1.9, 4.7, 7.6, 10.4, 13.3, 15.1, 17.8, 20.2, 23.6, 26.6, 28.4]}
@@ -336,11 +365,17 @@ def speaking(c, t):
 def state(c, t):
     """Pose of kid c at t."""
     a, b, x = keyed(ARMS[c], t)
+    since = max([t - k_t - MOVE for k_t, _ in ARMS[c] if k_t <= t] + [0])
+    prev = [n for k_t, n in ARMS[c] if k_t <= t - MOVE] or [ARMS[c][0][1]]
+    before = prev[-2] if len(prev) > 1 else prev[-1]
     arms = {}
     for sd in ('l', 'r'):
         pa, pb = POSES[a][sd], POSES[b][sd]
         if x >= 1 or a == b:
             v = list(pb) + [None] * (5 - len(pb))
+            du, df = settle(POSES[before][sd], pb, since)
+            v[0] += du
+            v[1] += df
         else:
             v = list(mix_arm(pa, pb, x))
             if pb[0] < 0 or pa[0] < 0 or (len(pb) > 4 and pb[4]) or (len(pa) > 4 and pa[4]):
