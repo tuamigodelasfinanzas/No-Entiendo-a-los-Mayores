@@ -120,7 +120,7 @@ def unit(v):
     return v / max(np.linalg.norm(v), 1e-6)
 
 
-def draw_sleeve(frame, side, Sw, Ew, Ww, t_sh, S, fade=None, mask=None):
+def draw_sleeve(frame, side, Sw, Ew, Ww, t_sh, S, fade=None, mask=None, body=None):
     """Bends the straight sleeve along a smooth curve: it leaves the shoulder along t_sh (between hanging and the upper
     arm, so the shoulder rounds off like a real one), goes round the elbow and comes out along the forearm."""
     g, im = SLEEVES[side], STRIP[side]
@@ -169,6 +169,15 @@ def draw_sleeve(frame, side, Sw, Ew, Ww, t_sh, S, fade=None, mask=None):
         px *= np.clip((v.reshape(yy.shape) - fade[0]) / (fade[1] - fade[0]), 0, 1)[..., None]
     if mask is not None:                        # only where mask (the torso) is: elsewhere the sleeve below shows
         px *= mask[y0:y1, x0:x1, None] / 255
+    if body is not None:
+        # everything of the sleeve but the inside of the cuff's opening: the hand goes over that inside and under
+        # the rest, so it comes out of the sleeve instead of sitting next to it
+        end = g['upper'] + g['fore']
+        vv = v.reshape(yy.shape) - end - CUFF_HOLE[0]
+        aa = (across / S).reshape(yy.shape)
+        hole = np.clip(1.6 - 1.6 * np.sqrt((vv / CUFF_HOLE[1]) ** 2 + (aa / CUFF_HOLE[2]) ** 2), 0, 1)
+        cov = px[..., 3] / 255 * (1 - hole)
+        body[y0:y1, x0:x1] = np.maximum(body[y0:y1, x0:x1], cov)
     al = px[..., 3:]
     px[..., :3] = np.where(al > 0, px[..., :3] * 255 / np.maximum(al, 1), 0)
     tile = Image.fromarray(np.clip(px, 0, 255).astype(np.uint8), 'RGBA')
@@ -215,6 +224,7 @@ def leg(side, Mt, A, S, lift):
 # a palm shown to the camera has it inside (up, with the arm out); pointing sideways, the thumb goes on top
 SHOULDER_FOLLOW = 0.35      # how much the sleeve leaves the shoulder still pointing down (round shoulder)
 ELBOW_FOLD = 45             # degrees the elbow bends half way through a big arm move
+CUFF_HOLE = (8.0, 5.0, 23.0)   # the cuff's opening in the sleeve: centre past the wrist, half depth, half width (px)
 SHOULDER_RISE = 9           # px the shoulder goes up with the arm raised high
 SHOULDER_FADE = (-6, 34)    # sleeve rows (from the shoulder joint) over which it fades into the torso
 DOWN = {'l': (12, 8, REST_HAND, 0), 'r': (12, 8, REST_HAND, 0)}
@@ -222,15 +232,15 @@ ARM_KEYS = [  # (time, pose); between keys the angles ease, the hand changes hal
     (0.0, DOWN), (3.4, DOWN),
     (3.9, {'l': (6, 4, REST_HAND, 0), 'r': (132, 150, 'abierta~', 0)}),          # waves: arm up and out, elbow a little bent, hand clear of the head
     (5.3, {'l': (6, 4, REST_HAND, 0), 'r': (132, 150, 'abierta~', 0)}),
-    (5.8, {'l': (84, 88, 'senala~', 0), 'r': (6, 4, REST_HAND, 0)}),             # points away
-    (7.0, {'l': (84, 88, 'senala~', 0), 'r': (6, 4, REST_HAND, 0)}),
-    (7.5, {'l': (6, 4, REST_HAND, 0), 'r': (160, 160, 'senala', 0)}),            # points up: an idea
-    (8.7, {'l': (6, 4, REST_HAND, 0), 'r': (160, 160, 'senala', 0)}),
+    (5.8, {'l': (70, 82, 'abierta~', 25), 'r': (6, 4, REST_HAND, 0)}),           # shows something to the side
+    (7.0, {'l': (70, 82, 'abierta~', 25), 'r': (6, 4, REST_HAND, 0)}),
+    (7.5, {'l': (6, 4, REST_HAND, 0), 'r': (150, 165, 'abierta~', 0)}),           # hand up: an idea (no pointing
+    (8.7, {'l': (6, 4, REST_HAND, 0), 'r': (150, 165, 'abierta~', 0)}),           # finger: Chiño prefers open hands)
     (9.1, {'l': (40, 80, 'abierta~', 35), 'r': (40, 80, 'abierta~', 35)}),         # shrug: palms out, fingers up
     (10.1, {'l': (40, 80, 'abierta~', 35), 'r': (40, 80, 'abierta~', 35)}),
-    (10.5, {'l': (14, 30, 'puno', 0), 'r': (14, 30, 'puno', 0)}),                # gets ready to jump
-    (10.9, {'l': (150, 168, 'puno', 0), 'r': (150, 168, 'puno', 0)}),            # celebrates in the air
-    (11.6, {'l': (150, 168, 'puno', 0), 'r': (150, 168, 'puno', 0)}),
+    (10.5, {'l': (14, 30, REST_HAND, 0), 'r': (14, 30, REST_HAND, 0)}),          # gets ready to jump
+    (10.9, {'l': (150, 168, 'abierta~', 0), 'r': (150, 168, 'abierta~', 0)}),    # celebrates in the air, hands open
+    (11.6, {'l': (150, 168, 'abierta~', 0), 'r': (150, 168, 'abierta~', 0)}),
     (12.3, DOWN), (14.0, DOWN),
 ]
 
@@ -368,12 +378,16 @@ def frame_at(t, debug=False):
         draw(img, 'shin_' + side, legs[side][1])
     for side in ('l', 'r'):
         draw(img, 'thigh_' + side, legs[side][0])
-    sleeves_later = []
+    sleeves_later, hands_later = [], []
+    body = np.zeros((H, W)) if SLEEVES else None
     if not ONE_PIECE:                               # layered sleeves go behind the torso's round shoulder
         for side in ('l', 'r'):
             up, fore, hand, rot = p['arms'][side]
             Mu, Mf, Mhd = arm(side, Mt, S, p['tilt'], up, fore, hand, rot)
-            draw(img, f'hand_{hand.rstrip("~")}_{side}', Mhd)
+            if SLEEVES:
+                hands_later.append((f'hand_{hand.rstrip("~")}_{side}', Mhd))
+            else:
+                draw(img, f'hand_{hand.rstrip("~")}_{side}', Mhd)
             if SLEEVES:
                 Sw, Ew = ap(Mu, J['shoulder_' + side]), ap(Mu, J['elbow_' + side])
                 Ww = ap(Mf, J['wrist_' + side])
@@ -381,7 +395,7 @@ def frame_at(t, debug=False):
                 th_u = math.radians(90 + sgn * up) + p['tilt']
                 th_s = th_u - SHOULDER_FOLLOW * (th_u - (math.pi / 2 + p['tilt']))
                 t_sh = np.array([math.cos(th_s), math.sin(th_s)])
-                draw_sleeve(img, side, Sw, Ew, Ww, t_sh, S)
+                draw_sleeve(img, side, Sw, Ew, Ww, t_sh, S, body=body)
                 sleeves_later.append((side, Sw, Ew, Ww, t_sh))
                 continue
             draw(img, 'forearm_' + side, Mf)
@@ -393,6 +407,13 @@ def frame_at(t, debug=False):
         tmask = np.asarray(torso)[..., 3].astype(float)
         for side, Sw, Ew, Ww, t_sh in sleeves_later:
             draw_sleeve(img, side, Sw, Ew, Ww, t_sh, S, fade=SHOULDER_FADE, mask=tmask)
+    if hands_later:                                 # the hands, coming out of the cuffs' openings
+        layer = Image.new('RGBA', (W, H))
+        for name, Mhd in hands_later:
+            draw(layer, name, Mhd)
+        la = np.asarray(layer).copy()
+        la[..., 3] = (la[..., 3] * (1 - body)).astype(np.uint8)
+        img.alpha_composite(Image.fromarray(la, 'RGBA'))
     if p['arms'] and ONE_PIECE:
         for side in ('l', 'r'):
             up, fore, hand, rot = p['arms'][side]
