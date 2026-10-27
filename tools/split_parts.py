@@ -4,6 +4,10 @@ Usage: python3 tools/split_parts.py      -> assets/characters/e/parts/<piece>.pn
 
 Pieces (draw order, back to front): foot_l, foot_r, shin_l, shin_r, thigh_l, thigh_r, torso, head (+ blink, jaw).
   - torso:  hoodie, arms with the hands in the pockets, and the jeans down to a V line through the crotch;
+  - torso_libre: the same without the arms (the side of the hoodie gets its outline, the pockets are filled), for
+            upperarm + forearm (the sleeves of the drawing, split at the elbow crease) and a hand;
+  - hand_<kind>_<side>: the hands of the MANOS row of the character sheet (open, fist, thumb up, pointing, relaxed),
+            the right side is the mirror of the left;
   - thigh:  hip to knee; its top goes on under the torso, so the hip never opens a gap;
   - shin:   knee to the cuff; its top is rounded and goes on under the thigh, and a knee disk of the same denim sits behind it so the
             joint stays closed when the knee bends;
@@ -25,7 +29,36 @@ JOINTS = {
     'pelvis': [450, 812],
     'hip_l': [385, 812], 'knee_l': [362, 946], 'ankle_l': [338, 1058],
     'hip_r': [512, 812], 'knee_r': [510, 946], 'ankle_r': [518, 1058],
+    'shoulder_l': [322, 532], 'elbow_l': [292, 648], 'wrist_l': [338, 746],
+    'shoulder_r': [586, 532], 'elbow_r': [614, 648], 'wrist_r': [564, 750],
 }
+
+# the arms in the drawing (hands in the pockets): outline of each sleeve, and the elbow crease that splits it
+ARM = {
+    'l': [(320, 492), (300, 535), (272, 600), (254, 645), (262, 700), (285, 738), (312, 756), (352, 748), (364, 712),
+          (350, 655), (346, 600), (338, 555), (330, 512)],
+    'r': [(566, 495), (598, 520), (616, 580), (638, 640), (636, 690), (618, 738), (586, 756), (548, 756), (545, 710),
+          (550, 655), (554, 600), (558, 545)],
+}
+CREASE = {'l': ((254, 640), (350, 660)), 'r': ((552, 655), (640, 640))}
+POCKET = {'l': (305, 735, 382, 798), 'r': (522, 735, 600, 798)}     # the hands in the pockets
+SIDE = {'l': 364, 'r': 541}                                         # new side of the hoodie at the hem
+HIP = {'l': [(364, 730), (364, 766), (352, 771), (342, 779), (334, 794), (331, 800), (382, 800), (382, 730)],
+       'r': [(541, 730), (541, 766), (553, 771), (562, 779), (566, 794), (568, 800), (522, 800), (522, 730)]}
+HEM = 766                                                           # bottom of the hoodie where the hands go in
+HOODIE_LINE = np.array([92, 20, 22.0])
+
+# hands from the MANOS row of the character sheet (E_data_sheet.jpg, 853x1280): box, wrist, and the direction
+# wrist -> knuckles in degrees (image coords, y down). They are E's left hand; the right one is the mirror.
+SHEET = 'source/e-sheet.jpg'
+HANDS = {
+    'abierta': {'box': (20, 701, 86, 775), 'wrist': (52, 768), 'dir': -90},
+    'puno': {'box': (86, 711, 136, 765), 'wrist': (108, 761), 'dir': -90},
+    'pulgar': {'box': (134, 703, 186, 766), 'wrist': (139, 752), 'dir': -20},
+    'senala': {'box': (186, 709, 264, 765), 'wrist': (193, 752), 'dir': -22},
+    'relajada': {'box': (260, 709, 324, 777), 'wrist': (306, 716), 'dir': 125},
+}
+HAND_SCALE = 1.55         # sheet hands -> the 896x1200 drawing
 
 
 def soft(mask, r=1.0):
@@ -50,6 +83,114 @@ def harmonic(rgb, hole, known, iters=800):
         avg = (np.roll(f, 1, 0) + np.roll(f, -1, 0) + np.roll(f, 1, 1) + np.roll(f, -1, 1)) / 4
         f[hole] = avg[hole]
     return f
+
+
+def polymask(pts, W, H):
+    m = Image.new('L', (W, H))
+    ImageDraw.Draw(m).polygon(pts, fill=255)
+    return np.asarray(m) > 0
+
+
+def grow(mask, px):
+    m = Image.fromarray((mask * 255).astype(np.uint8))
+    return np.asarray(m.filter(ImageFilter.MaxFilter(2 * px + 1))) > 0
+
+
+def cut_hands(out, meta):
+    """Each hand of the sheet on its own, background out, plus its mirror for the other side."""
+    sheet = Image.open(os.path.join(SRC, '..', SHEET)).convert('RGB')
+    meta['hands'] = {}
+    for name, h in HANDS.items():
+        x0, y0, x1, y1 = h['box']
+        crop = np.asarray(sheet.crop(h['box'])).astype(np.float64)
+        mn, mx = crop.min(axis=2), crop.max(axis=2)
+        light = (mn > 232) & (mx - mn < 14)
+        bg = flood(light, [(0, 0), (crop.shape[1] - 1, 0), (0, crop.shape[0] - 1), (crop.shape[1] - 1, crop.shape[0] - 1)])
+        al = np.asarray(Image.fromarray(((~bg) * 255).astype(np.uint8)).filter(ImageFilter.MinFilter(3))
+                        .filter(ImageFilter.GaussianBlur(0.7))).astype(np.float64)
+        # only the hand: the biggest blob (drops bits of the neighbours that fall inside the box)
+        img = Image.fromarray(np.dstack([crop, al]).astype(np.uint8), 'RGBA')
+        img = img.resize((round(img.width * HAND_SCALE), round(img.height * HAND_SCALE)), Image.LANCZOS)
+        wx, wy = (h['wrist'][0] - x0) * HAND_SCALE, (h['wrist'][1] - y0) * HAND_SCALE
+        for side in ('r', 'l'):
+            piece = img if side == 'r' else img.transpose(Image.FLIP_LEFT_RIGHT)
+            px = wx if side == 'r' else piece.width - wx
+            d = h['dir'] if side == 'r' else 180 - h['dir']
+            piece.save(os.path.join(out, f'hand_{name}_{side}.png'), optimize=True)
+            meta['pieces'][f'hand_{name}_{side}'] = {'x': 0, 'y': 0}
+            meta['hands'][f'{name}_{side}'] = {'wrist': [px, wy], 'dir': d}
+
+
+def arms(rgb, alpha, torso_a, xx, yy):
+    """Upper arm, forearm (with a shoulder and an elbow disk behind) and a torso without the arms."""
+    H, W = alpha.shape
+    pieces = {}
+    trgb = rgb.copy()
+    ta = torso_a.copy()
+    sleeve = np.median(rgb[polymask(ARM['l'], W, H) & (alpha > 0.9) & (rgb[..., 0] > 150)], axis=0)
+    jeans = np.median(rgb[(yy > 790) & (yy < 830) & (xx > 380) & (xx < 520) & (alpha > 0.9)], axis=0)
+    for side in ('l', 'r'):
+        poly = polymask(ARM[side], W, H)
+        (cx0, cy0), (cx1, cy1) = CREASE[side]
+        crease = cy0 + (xx - cx0) * (cy1 - cy0) / (cx1 - cx0)
+        ex, ey = JOINTS['elbow_' + side]
+        sx, sy = JOINTS['shoulder_' + side]
+        polys = soft(poly, 0.8)
+        # upper arm (the torso keeps a round shoulder under it, so the joint never opens)
+        up = alpha * polys * soft(yy < crease, 1.0)
+        sring = (xx - sx) ** 2 + (yy - sy) ** 2
+        # the cut side of the sleeve (inside the drawing) gets the hoodie's outline, like the outer side has
+        inner = grow(~poly, 2) & poly & (alpha > 0.5) & ~grow(alpha < 0.3, 4)
+        k = soft(inner, 0.6)[..., None] * 0.9
+        pieces['upperarm_' + side] = (rgb * (1 - k) + HOODIE_LINE * k, up)
+        # forearm, with the elbow disk
+        ering = (xx - ex) ** 2 + (yy - ey) ** 2
+        erad = 30
+        r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
+        skin_all = (r > 190) & (g > 120) & (b > 80) & (r - b > 50) & (g - b > 15) & (yy > 720)
+        fa = alpha * polys * soft((yy >= crease) | (ering <= (erad - 2) ** 2), 1.0) * (1 - soft(grow(skin_all, 1), 0.8))
+        disk_rgb = np.where((ering >= (erad - 3) ** 2)[..., None], HOODIE_LINE, sleeve)
+        fa_rgb = rgb * (1 - k) + HOODIE_LINE * k
+        fa_rgb = fa_rgb * fa[..., None] + disk_rgb * (1 - fa[..., None])
+        pieces['forearm_' + side] = (fa_rgb, np.maximum(fa, soft(ering <= erad ** 2, 0.8)))
+        # torso: the sleeve out but a round shoulder (it stays, under the arm); the new side gets the outline.
+        # 3 px more than the sleeve, so no light rim of the old arm is left around the hoodie
+        removed = grow(poly, 3) & (sring > 50 ** 2) & (yy > JOINTS['shoulder_' + side][1] - 10)
+        ta = ta * (1 - soft(removed, 0.8))
+        edge = grow(removed, 3) & ~removed & (ta > 0.5)
+        ek = soft(edge, 0.7)[..., None] * 0.85
+        trgb = trgb * (1 - ek) + HOODIE_LINE * ek
+        # the hand in the pocket: hoodie above the hem, denim below
+        x0, y0, x1, y1 = POCKET[side]
+        box = (xx >= x0) & (xx < x1) & (yy >= y0) & (yy < y1)
+        r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
+        skin = box & (r > 190) & (g > 120) & (b > 80) & (r - b > 50) & (g - b > 15)
+        hole = grow(skin, 3) & box & (alpha > 0.1)
+        above = yy < HEM
+        # above the hem only what is inside the hoodie's new side; below it the jeans of the hip
+        inside = (xx >= SIDE[side]) if side == 'l' else (xx <= SIDE[side])
+        jeans_in = (xx >= 331) if side == 'l' else (xx <= 568)
+        hole = hole & ((above & inside) | (~above & jeans_in))
+        # the cuff and the hand outside the hoodie and the jeans: nothing there now
+        gone = box & ((above & ~inside) | (~above & ~jeans_in))
+        ta = ta * (1 - soft(gone, 0.6))
+        for part, base in ((above, sleeve), (~above, jeans)):
+            src = trgb.copy()
+            src[~part & box] = base
+            sl = (slice(y0 - 4, y1 + 4), slice(x0 - 4, x1 + 4))
+            filled = harmonic(src[sl], (hole & part)[sl], (~hole & part & box & (alpha > 0.9))[sl], iters=600)
+            trgb[sl][(hole & part)[sl]] = filled[(hole & part)[sl]]
+        # hem line and pocket line where the hand was
+        ta = np.maximum(ta, soft(hole, 0.6))
+        # the new hip: the hoodie side runs into the jeans, which widen to the hip; outlined like the drawing
+        keep = polymask(HIP[side], W, H) | ~box
+        ta = ta * soft(keep, 0.7)
+        rim = box & keep & grow(~keep, 2) & (yy < y1 - 2)
+        k = soft(rim, 0.6)[..., None] * 0.9
+        line = np.where((yy < HEM)[..., None], HOODIE_LINE, np.array([27, 42, 61.0]))
+        trgb = trgb * (1 - k) + line * k
+    pieces['torso_libre'] = (trgb, ta)
+    return pieces
 
 
 def main():
@@ -110,15 +251,20 @@ def main():
             if len(xs):
                 hidden[y, xs.min():xs.max() + 1] |= pants[y, xs.min():xs.max() + 1] & sel[y, xs.min():xs.max() + 1]
         hidden &= ~shoe
-        filled = harmonic(rgb, hidden, shoe & (yy < 1110) & (mx > 200))
+        sl = (slice(1000, H), slice(None))
+        filled = rgb.copy()
+        filled[sl] = harmonic(rgb[sl], hidden[sl], (shoe & (yy < 1110) & (mx > 200))[sl])
         fa = np.maximum(alpha * foot * (1 - hidden), soft(hidden, 0.6))
         pieces['foot_' + side] = (filled, fa)
 
     pieces['torso'] = (rgb, alpha * torso)
+    pieces.update(arms(rgb, alpha, alpha * torso, xx, yy))
 
     os.makedirs(OUT, exist_ok=True)
     meta = {'w': W, 'h': H, 'joints': JOINTS, 'order': ['foot_l', 'foot_r', 'shin_l', 'shin_r', 'thigh_l', 'thigh_r',
                                                          'torso', 'head'], 'pieces': {}}
+    os.makedirs(OUT, exist_ok=True)
+    cut_hands(OUT, meta)
     for name, (prgb, pa) in pieces.items():
         a8 = (pa * 255).clip(0, 255).astype(np.uint8)
         img = np.dstack([prgb.clip(0, 255).astype(np.uint8), a8])

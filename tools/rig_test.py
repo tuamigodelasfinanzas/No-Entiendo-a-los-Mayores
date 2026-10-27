@@ -1,4 +1,5 @@
-"""Rig test: E walks towards the camera and jumps twice, moved only by the skeleton of tools/split_parts.py.
+"""Rig test: E walks towards the camera, waves, points, gives a thumbs up, shrugs and jumps, moved only by the
+skeleton of tools/split_parts.py.
 Usage: python3 tools/rig_test.py out.mp4 [--debug]      (--debug draws the joints)
 
 The legs use two-bone IK: the hip comes from the torso, the ankle from the floor (or the air), and the knee bends
@@ -11,7 +12,7 @@ from PIL import Image, ImageDraw, ImageFilter
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PARTS = os.path.join(ROOT, 'assets/characters/e/parts')
 W, H, FPS = 1080, 1920, 30
-DUR = 9.0
+DUR = 14.0
 
 meta = json.load(open(os.path.join(PARTS, 'parts.json')))
 J = {k: np.array(v, float) for k, v in meta['joints'].items()}
@@ -61,6 +62,30 @@ def draw(frame, name, M):
     frame.alpha_composite(tile, (x0, y0))
 
 
+HANDS = meta['hands']
+REST = {}
+for _sd in ('l', 'r'):
+    REST['up_' + _sd] = math.degrees(ang(J['elbow_' + _sd] - J['shoulder_' + _sd]))
+    REST['fore_' + _sd] = math.degrees(ang(J['wrist_' + _sd] - J['elbow_' + _sd]))
+
+
+def arm(side, Mt, S, tilt, up_out, fore_out, hand, hand_rot=0.0):
+    """Upper arm, forearm and hand matrices. up_out / fore_out: degrees away from hanging straight down, outwards
+    (90 = sideways, 180 = straight up), for the upper arm and the forearm; hand: kind of hand (abierta, puno...)."""
+    sgn = 1 if side == 'l' else -1
+    th_u = math.radians(90 + sgn * up_out) + tilt
+    th_f = math.radians(90 + sgn * fore_out) + tilt
+    S0, E0 = J['shoulder_' + side], J['elbow_' + side]
+    Sw = ap(Mt, S0)
+    Mu = T(*Sw) @ R(th_u - math.radians(REST['up_' + side])) @ Sc(S) @ T(*-S0)
+    Ew = ap(Mu, E0)
+    Mf = T(*Ew) @ R(th_f - math.radians(REST['fore_' + side])) @ Sc(S) @ T(*-E0)
+    Ww = ap(Mf, J['wrist_' + side]) - 9 * S * np.array([math.cos(th_f), math.sin(th_f)])   # into the cuff
+    h = HANDS[f'{hand}_{side}']
+    Mh = T(*Ww) @ R(th_f - math.radians(h['dir']) + sgn * math.radians(hand_rot)) @ Sc(S) @ T(*[-v for v in h['wrist']])
+    return Mu, Mf, Mh
+
+
 def leg(side, Mt, A, S, lift):
     """Thigh, shin and foot matrices: hip from the torso matrix Mt, ankle at A (frame coords).
     lift 0..1: how much the leg comes towards the camera (shortens on screen instead of bending sideways)."""
@@ -90,12 +115,45 @@ def leg(side, Mt, A, S, lift):
     return Mth, Msh, Mft, Hp, K
 
 
+# arm poses: side -> (upper arm out, forearm out, hand, hand turn); None = hands in the pockets (the drawing as is)
+DOWN = {'l': (6, 4, 'relajada', 0), 'r': (6, 4, 'relajada', 0)}
+ARM_KEYS = [  # (time, pose); between keys the angles ease, the hand changes half way
+    (0.0, DOWN), (3.4, DOWN),
+    (3.9, {'l': (6, 4, 'relajada', 0), 'r': (135, 170, 'abierta', 0)}),          # waves
+    (5.3, {'l': (6, 4, 'relajada', 0), 'r': (135, 170, 'abierta', 0)}),
+    (5.8, {'l': (84, 88, 'senala', 0), 'r': (6, 4, 'relajada', 0)}),             # points away
+    (7.0, {'l': (84, 88, 'senala', 0), 'r': (6, 4, 'relajada', 0)}),
+    (7.5, {'l': (6, 4, 'relajada', 0), 'r': (28, 150, 'pulgar', 0)}),            # thumbs up
+    (8.7, {'l': (6, 4, 'relajada', 0), 'r': (28, 150, 'pulgar', 0)}),
+    (9.1, {'l': (22, 80, 'abierta', 0), 'r': (22, 80, 'abierta', 0)}),           # shrug
+    (10.1, {'l': (22, 80, 'abierta', 0), 'r': (22, 80, 'abierta', 0)}),
+    (10.5, {'l': (14, 30, 'puno', 0), 'r': (14, 30, 'puno', 0)}),                # gets ready to jump
+    (10.9, {'l': (150, 168, 'puno', 0), 'r': (150, 168, 'puno', 0)}),            # celebrates in the air
+    (11.6, {'l': (150, 168, 'puno', 0), 'r': (150, 168, 'puno', 0)}),
+    (12.3, DOWN), (14.0, DOWN),
+]
+
+
+def arms_at(t):
+    for (t0, a), (t1, b) in zip(ARM_KEYS, ARM_KEYS[1:]):
+        if t0 <= t <= t1:
+            k = ease((t - t0) / (t1 - t0)) if t1 > t0 else 1
+            out = {}
+            for side in ('l', 'r'):
+                pa, pb = a[side], b[side]
+                out[side] = (pa[0] + (pb[0] - pa[0]) * k, pa[1] + (pb[1] - pa[1]) * k, pa[2] if k < 0.5 else pb[2],
+                             pa[3] + (pb[3] - pa[3]) * k)
+            return out
+    return ARM_KEYS[-1][1]
+
+
 def pose(t):
     """Everything that moves, as numbers, at time t."""
     p = {'tilt': 0.0, 'head': 0.0, 'lift': [0.0, 0.0], 'air': [0.0, 0.0], 'drop': 0.0, 'dx': 0.0, 'blink': False,
          'spread': 0.0}
-    # walk towards the camera: 0 .. 4.2 s, steps of 0.5 s
-    walk_end = 4.2
+    p['arms'] = {k: list(v) for k, v in arms_at(t).items()}
+    # walk towards the camera: 0 .. 3.4 s, steps of 0.5 s; the arms swing a little
+    walk_end = 3.4
     k = ease(min(t / walk_end, 1))
     p['S'] = 0.62 + 0.36 * k
     if t < walk_end:
@@ -107,8 +165,23 @@ def pose(t):
         p['dx'] = -s * 7 * amp                 # the weight goes over the foot on the floor
         p['tilt'] = math.radians(2.2) * s * amp
         p['head'] = -math.radians(1.6) * math.sin(ph - 0.5) * amp
-    # two jumps
-    for j0 in (4.9, 7.0):
+        # the arm opposite to the lifted leg comes forward: in a front view the forearm bends up a little
+        p['arms']['l'][0] += 4 * amp * max(-s, 0)
+        p['arms']['l'][1] += 26 * amp * max(-s, 0)
+        p['arms']['r'][0] += 4 * amp * max(s, 0)
+        p['arms']['r'][1] += 26 * amp * max(s, 0)
+    # waving: the forearm goes from side to side
+    if 3.9 <= t <= 5.3:
+        p['arms']['r'][1] += 16 * math.sin((t - 3.9) * 2 * math.pi * 1.6)
+        p['head'] += math.radians(3)
+    if 5.8 <= t <= 7.0:
+        p['head'] -= math.radians(3)
+    if 9.1 <= t <= 10.1:                          # shrug: the shoulders go up with the head tilted
+        c = math.sin(math.pi * (t - 9.1) / 1.0)
+        p['head'] += math.radians(5) * c
+        p['drop'] -= 6 * c
+    # the jump
+    for j0 in (10.3,):
         u = t - j0
         crouch, launch, air_t, land, rec = 0.38, 0.12, 0.62, 0.16, 0.3
         if 0 <= u < crouch:                            # get ready: knees out, body down
@@ -182,7 +255,14 @@ def frame_at(t, debug=False):
         draw(img, 'shin_' + side, legs[side][1])
     for side in ('l', 'r'):
         draw(img, 'thigh_' + side, legs[side][0])
-    draw(img, 'torso', Mt)
+    draw(img, 'torso_libre' if p['arms'] else 'torso', Mt)
+    if p['arms']:
+        for side in ('l', 'r'):
+            up, fore, hand, rot = p['arms'][side]
+            Mu, Mf, Mhd = arm(side, Mt, S, p['tilt'], up, fore, hand, rot)
+            draw(img, f'hand_{hand}_{side}', Mhd)
+            draw(img, 'forearm_' + side, Mf)
+            draw(img, 'upperarm_' + side, Mu)
     draw(img, 'head', Mh)
     if p['blink']:
         draw(img, 'blink', Mh)
