@@ -12,8 +12,12 @@ from PIL import Image
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from escena_rig import ROOT, W, H, FPS, POSES, MOVE, COLOR, HEIGHT, kid, mix_arm, settle, keyed, envelope, \
     background, label, pop, ease, icon
+import fondos
 
 DIR = os.path.join(ROOT, 'content/especiales/hipoteca')
+# the set of the mortgage (tools/fondos.py), from its script; FONDO=liso keeps the old plain wall
+FONDO = None if os.environ.get('FONDO') == 'liso' else fondos.Fondo(
+    json.load(open(os.path.join(ROOT, 'content/guiones/es/001-hipoteca.json'))), theme=os.environ.get('FONDO') or None)
 # R gestures with the hand on E's side (the left of the screen), E with the one on R's side; shrugging next to each
 # other, the hand towards the other kid stays close to the body
 POSES = dict(POSES)
@@ -255,7 +259,7 @@ def emotes(img, t, pos):
 # ---------------------------------------------------------------- frames
 def frame_at(t):
     cx, cy, z = camera(t)
-    img = background(z, cx, cy)
+    img = FONDO.frame(z, cx, cy, t) if FONDO else background(z, cx, cy)
     heads = {}
     for c in ('e', 'r'):
         x, floor, s = WORLD[c]

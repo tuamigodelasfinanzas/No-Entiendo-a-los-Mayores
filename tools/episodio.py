@@ -18,6 +18,7 @@ from PIL import Image
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from escena_rig import ROOT, W, H, FPS, POSES, MOVE, COLOR, HEIGHT, kid, mix_arm, settle, keyed, envelope, \
     background, label, pop, ease, icon
+import fondos
 
 # each kid gestures with the hand on the other's side (E is on the left of the screen, R on the right); shrugging
 # next to each other, the hand towards the other kid stays close to the body
@@ -158,6 +159,8 @@ def load(eid):
     EP.arms = {c: arms_keys(c) for c in ('e', 'r')}
     EP.blink = {'e': list(np.arange(1.3, t, 2.9)), 'r': list(np.arange(2.1, t, 3.3))}
     EP.env = {}
+    # the set: a theme background chosen from the script (tools/fondos.py); FONDO=liso keeps the old plain wall
+    EP.fondo = None if os.environ.get('FONDO') == 'liso' else fondos.Fondo(g, theme=os.environ.get('FONDO') or None)
 
 
 def shots():
@@ -390,7 +393,7 @@ def emotes(img, t, pos):
 # ---------------------------------------------------------------- frames
 def frame_at(t):
     cx, cy, z = camera(t)
-    img = background(z, cx, cy)
+    img = EP.fondo.frame(z, cx, cy, t) if EP.fondo else background(z, cx, cy)
     heads = {}
     for c in ('e', 'r'):
         x, floor, s = WORLD[c]
