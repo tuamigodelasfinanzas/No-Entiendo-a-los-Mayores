@@ -10,9 +10,9 @@ export const VOICES = {
     // edge-tts has no child voices: two adult voices, then `kid` moves pitch AND timbre (formants) up together,
     // which is what makes a voice sound like a child and not like an adult speaking high (childify below).
     // E: quick, bright, a little higher (impulsive, always has an idea)
-    e: { voice: 'es-ES-XimenaNeural', rate: '+6%', pitch: '+10Hz', kid: 1.2 },
+    e: { voice: 'es-ES-XimenaNeural', rate: '+6%', pitch: '+20Hz', kid: 1.14 },
     // R: calmer, lower and a bit slower (he thinks before asking)
-    r: { voice: 'es-ES-ElviraNeural', rate: '-4%', pitch: '+2Hz', kid: 1.15 },
+    r: { voice: 'es-ES-ElviraNeural', rate: '-4%', pitch: '+10Hz', kid: 1.1 },
   },
 };
 export const voiceOn = () => String(process.env.CDM_VOICE ?? 'true') !== 'false';
@@ -22,16 +22,25 @@ export const estimate = text => Math.max(0.7, String(text).split(/\s+/).filter(B
 
 const clean = t => String(t ?? '').replace(/\p{Extended_Pictographic}|\u{FE0F}|\u{200D}/gu, '').replace(/(\d)\s?%/g, '$1 por ciento').replace(/€/g, ' euros').replace(/\s+/g, ' ').trim();
 
-// a child's voice: the clip played f times faster (pitch and formants up by f, like a smaller throat), then
-// stretched back to its length without touching the pitch
+// a child's voice: pitch and formants up together by f (like a smaller throat), same length. Rubber Band in its
+// high quality mode (smooth transients, laminar phase) sounds far less metallic than asetrate + atempo, which stays
+// only as the fallback for an ffmpeg without it; a soft high shelf takes off the remaining shine
 export function childify(file, f) {
   if (!f || f === 1) return;
   const tmp = file.replace(/\.mp3$/, '') + '.kid.mp3';
   const sr = Number(execFileSync('ffprobe', ['-v', 'error', '-select_streams', 'a:0', '-show_entries', 'stream=sample_rate', '-of', 'csv=p=0', file]).toString().trim()) || 24000;
-  try {
-    execFileSync('ffmpeg', ['-y', '-v', 'error', '-i', file, '-af', `asetrate=${Math.round(sr * f)},aresample=${sr},atempo=${(1 / f).toFixed(4)}`, '-c:a', 'libmp3lame', '-q:a', '2', tmp], { stdio: 'pipe' });
-    fs.renameSync(tmp, file);
-  } catch { fs.rmSync(tmp, { force: true }); }
+  const soft = 'highshelf=f=5500:g=-4,equalizer=f=250:t=q:w=1.2:g=1.5';
+  const chains = [
+    `rubberband=pitch=${f}:pitchq=quality:formant=shifted:transients=smooth:phase=laminar:window=long,${soft}`,
+    `asetrate=${Math.round(sr * f)},aresample=${sr},atempo=${(1 / f).toFixed(4)},${soft}`,
+  ];
+  for (const af of chains) {
+    try {
+      execFileSync('ffmpeg', ['-y', '-v', 'error', '-i', file, '-af', af, '-c:a', 'libmp3lame', '-q:a', '0', tmp], { stdio: 'pipe' });
+      fs.renameSync(tmp, file);
+      return;
+    } catch { fs.rmSync(tmp, { force: true }); }
+  }
 }
 
 // edge-tts leaves ~0.1 s of silence before and ~0.6 s after every clip: over 10-12 lines that is several seconds
