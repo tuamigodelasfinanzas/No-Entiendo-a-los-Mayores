@@ -28,19 +28,6 @@ Lo que Chiño ha pedido o corregido, para que todos los vídeos salgan igual. El
 - Los gestos con la mano en la cara se ven mal de cerca. Rascarse la cabeza se hace con la mano detrás de la cabeza.
   "Pensar" se hace con el puño bajo la barbilla, sin tapar la cara.
 
-## Malla deformable y gestos reales (en prueba, 27-10-2026)
-- `tools/malla.py`: la sudadera y el pantalón son mallas de triángulos que se doblan (el pecho se inclina sobre la
-  cadera con una curva en la cintura, respira y cada hombro de la sudadera sube con su brazo; la pierna se dobla
-  seguida en rodilla y cadera). **La cara nunca va en la malla**: la cabeza se mueve entera y sigue al pecho con un
-  poco de retraso (muelle). Mangas, manos, muñecas y hombros son los de `escena_rig.py`.
-- `tools/gestos.py`: gestos humanos reales, gratis. De un vídeo de móvil con MediaPipe (`video clip.mp4 nombre`) o de
-  captura de movimiento libre CMU (`bvh clip.bvh nombre`). Se guardan en `assets/gestos/`. `malla.retarget()` copia
-  solo los ángulos, así el adulto de la grabación se convierte en un niño con sus proporciones. Mano abierta cuando
-  el brazo hace algo, relajada cuando cuelga; nunca señalar.
-- Un gesto de adulto muy rápido (levantar el brazo de golpe) se ralentiza al principio (`slow_start`), para que suba
-  como un niño. Un antebrazo que apunta a cámara se sigue despacio (no da latigazos).
-- Escena de prueba: `python3 tools/escena_malla.py out.mp4`.
-
 ## Voz
 - Las voces de edge-tts tal cual: `es-ES-XimenaNeural` para E (+4 % de velocidad, +12 Hz) y `es-ES-ElviraNeural`
   para R (−2 %, +6 Hz). **Ningún procesado de tono ni de formantes después** (asetrate, Rubber Band...): suena
