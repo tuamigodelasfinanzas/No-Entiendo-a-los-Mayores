@@ -334,8 +334,8 @@ def overlays(img, t):
     series = SERIES.get(g.get('serie'), '')
     if t < 2.6:
         if series:
-            label(img, series, W / 2, 150, 40, (255, 255, 255), (60, 160, 90), scale=pop(t), rot=-2, pad=(26, 10))
-        label(img, title, W / 2, 310, 84, (40, 30, 40), (255, 255, 255), border=(40, 30, 40),
+            label(img, series, W / 2, 115, 40, (255, 255, 255), (60, 160, 90), scale=pop(t), rot=-2, pad=(26, 10))
+        label(img, title, W / 2, 330, 84, (40, 30, 40), (255, 255, 255), border=(40, 30, 40),
               scale=pop(t - 0.1), rot=-2, maxw=980)
     else:
         label(img, title, W / 2, 150, 48, (40, 30, 40), (255, 255, 255), border=(40, 30, 40),
@@ -357,8 +357,8 @@ def overlays(img, t):
                   border=border, scale=min(1.0, 0.85 + (t - at + 0.05) * 3))
     if EP.end_text is not None and t >= EP.end_text:
         u = t - EP.end_text
-        label(img, CLOSING, W / 2, 1560, 110, (255, 255, 255), (215, 50, 46), border=(255, 255, 255),
-              scale=pop(u), rot=-3 + 1.5 * math.sin(2 * u))
+        label(img, CLOSING, W / 2, 1560, 96, (255, 255, 255), (215, 50, 46), border=(255, 255, 255),
+              scale=pop(u), maxw=1040, rot=-3 + 1.5 * math.sin(2 * u))
     end = EP.end_text if EP.end_text is not None else max(EP.says.values()) + 1.0
     if t >= end + 0.4:
         label(img, 'No Entiendo a los Mayores', W / 2, 1790, 48, (40, 30, 40), (255, 255, 255), scale=pop(t - end - 0.4),
