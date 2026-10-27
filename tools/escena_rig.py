@@ -644,6 +644,30 @@ def icon(kind, size):
             x1, y1 = c + math.cos(math.radians(a)) * s * 0.27, c - s * 0.06 + math.sin(math.radians(a)) * s * 0.27
             x2, y2 = c + math.cos(math.radians(a)) * s * 0.36, c - s * 0.06 + math.sin(math.radians(a)) * s * 0.36
             d.line((x1, y1, x2, y2), fill=(255, 170, 40, 255), width=int(s * 0.025))
+    elif kind == 'casa':
+        roof = [(c - s * 0.27, c - s * 0.02), (c, c - s * 0.27), (c + s * 0.27, c - s * 0.02)]
+        d.rectangle((c - s * 0.19, c - s * 0.04, c + s * 0.19, c + s * 0.24), fill=(255, 236, 200, 255), outline=ink, width=int(s * 0.02))
+        d.polygon(roof, fill=(215, 50, 46, 255), outline=ink)
+        d.line(roof, fill=ink, width=int(s * 0.02), joint='curve')
+        d.rectangle((c - s * 0.05, c + s * 0.08, c + s * 0.05, c + s * 0.24), fill=(150, 95, 60, 255), outline=ink, width=int(s * 0.012))
+        d.rectangle((c + s * 0.08, c + s * 0.02, c + s * 0.15, c + s * 0.09), fill=(140, 200, 255, 255), outline=ink, width=int(s * 0.01))
+    elif kind == 'calendario':
+        d.rounded_rectangle((c - s * 0.24, c - s * 0.2, c + s * 0.24, c + s * 0.24), radius=s * 0.04, fill=(255, 255, 255, 255), outline=ink, width=int(s * 0.02))
+        d.rectangle((c - s * 0.24, c - s * 0.2, c + s * 0.24, c - s * 0.08), fill=(215, 50, 46, 255), outline=ink, width=int(s * 0.02))
+        for x in (-0.12, 0.12):
+            d.line((c + s * x, c - s * 0.26, c + s * x, c - s * 0.15), fill=ink, width=int(s * 0.03))
+        d.text((c, c + s * 0.09), '30', font=font(int(s * 0.2)), fill=ink, anchor='mm')
+    elif kind == 'grafica':
+        d.line((c - s * 0.24, c - s * 0.24, c - s * 0.24, c + s * 0.22, c + s * 0.26, c + s * 0.22), fill=ink, width=int(s * 0.025))
+        pts = [(c - s * 0.18, c + s * 0.12), (c - s * 0.05, c + s * 0.04), (c + s * 0.05, c + s * 0.08), (c + s * 0.2, c - s * 0.16)]
+        d.line(pts, fill=(31, 160, 90, 255), width=int(s * 0.04), joint='curve')
+        d.polygon([(c + s * 0.25, c - s * 0.23), (c + s * 0.12, c - s * 0.19), (c + s * 0.22, c - s * 0.08)], fill=(31, 160, 90, 255))
+    elif kind == 'banco':
+        d.polygon([(c - s * 0.28, c - s * 0.08), (c, c - s * 0.26), (c + s * 0.28, c - s * 0.08)], fill=(200, 200, 210, 255), outline=ink)
+        for x in (-0.18, -0.06, 0.06, 0.18):
+            d.rectangle((c + s * (x - 0.03), c - s * 0.05, c + s * (x + 0.03), c + s * 0.17), fill=(230, 230, 236, 255), outline=ink, width=int(s * 0.01))
+        d.rectangle((c - s * 0.28, c + s * 0.17, c + s * 0.28, c + s * 0.23), fill=(200, 200, 210, 255), outline=ink, width=int(s * 0.012))
+        d.text((c, c - s * 0.13), '€', font=font(int(s * 0.1)), fill=(176, 122, 0, 255), anchor='mm')
     return im.resize((size, size), Image.LANCZOS)
 
 
