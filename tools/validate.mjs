@@ -10,6 +10,8 @@ import { SERIES, PILLARS, speakerOf } from '../src/director.mjs';
 const ROOT = path.resolve(new URL('..', import.meta.url).pathname);
 const args = process.argv.slice(2);
 const errors = [], warns = [];
+// a kid's name said out loud or written: "E," "¿R?" "y E" ... (they never call each other by name)
+const NAMED = /(^|[\s¿¡"'(,])(E|R|Edu|Rubén|Ruben)(?=[\s,.!?…:;)"']|$)/;
 const err = (id, m) => errors.push(`${id}: ${m}`), warn = (id, m) => warns.push(`${id}: ${m}`);
 
 // what the renderer knows how to draw (read from the code, so this list never goes stale)
@@ -58,6 +60,7 @@ for (const f of files) {
   if (s.formato && !FORMATS.includes(s.formato)) err(id, `formato desconocido "${s.formato}" (${FORMATS.join(', ')})`);
   if (s.escenario && !SETS.includes(s.escenario)) err(id, `escenario desconocido "${s.escenario}" (${SETS.join(', ')})`);
   if (s.duracion && !DURATION[s.duracion]) err(id, `duracion debe ser ${Object.keys(DURATION).join(', ')}`);
+  for (const k of ['titulo', 'cierre']) if (NAMED.test(String(s[k] || ''))) err(id, `"${k}": sin nombres de los niños (regla de Chiño)`);
   if (String(s.titulo).length > 70) warn(id, 'título de más de 70 caracteres (se corta en YouTube con #Shorts)');
   if (String(s.aprendizaje || '').length < 40) err(id, 'el "aprendizaje" es demasiado corto: cada episodio deja algo útil');
   if (!Array.isArray(s.lineas) || !s.lineas.length) continue;
@@ -74,6 +77,7 @@ for (const f of files) {
       const t = ln[who];
       if (!t.trim()) err(id, `${where}: texto vacío`);
       if (t.length > 90) err(id, `${where}: ${t.length} caracteres (máx. 90: los niños hablan corto)`);
+      if (NAMED.test(t)) err(id, `${where}: los niños nunca se llaman por su nombre en el vídeo (regla de Chiño, docs/reglas-animacion.md)`);
       for (const w of norm(t).split(/[^a-zñ]+/)) if (AVOID.map(norm).includes(w)) err(id, `${where}: evita "${w}" (muy local o impropio; docs/guia-editorial.md §5)`);
       if (ln.cara && !EXPR.includes(ln.cara)) err(id, `${where}: cara "${ln.cara}" no existe (${EXPR.join(', ')})`);
       if (ln.otro && !EXPR.includes(ln.otro)) err(id, `${where}: cara del otro "${ln.otro}" no existe`);

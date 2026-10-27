@@ -15,7 +15,7 @@ Los diseños son los de las hojas de Chiño (`assets/characters/source/`). `tool
 | Color de marca | Rojo `#D7322E` (sudadera) | Azul `#1F6FE0` (sudadera) |
 | Silueta | Pelo castaño rizado y alborotado, más ancho arriba | Pelo rubio corto y en punta, cabeza más redonda |
 | Ropa | Sudadera roja con capucha, vaqueros, zapatillas blancas con rayas de colores | Sudadera azul con capucha, camiseta blanca, vaqueros oscuros, zapatillas blancas **lisas** |
-| Voz | `es-ES-XimenaNeural`, +8 % velocidad, +28 Hz: rápida y brillante | `es-ES-ElviraNeural`, −3 % velocidad, +14 Hz: más pausada y grave |
+| Voz | `es-ES-XimenaNeural`, +4 % velocidad, +12 Hz: rápida y brillante | `es-ES-ElviraNeural`, −2 % velocidad, +6 Hz: más pausada y grave (sin ningún procesado después: [reglas](reglas-animacion.md)) |
 | En pantalla | Siempre a la izquierda | Siempre a la derecha |
 | Cara al hablar | `convencido` | `curioso` |
 | Cara al escuchar | `sonrisa` | `neutral` |
@@ -32,7 +32,7 @@ E **no** es el listo ni R el tonto (ni al revés). E sabe la mitad de las cosas 
 ## 2. Reglas de diálogo
 
 - **Frases cortas.** Máximo 90 caracteres por línea; lo normal son 3 a 9 palabras. R suele hablar menos que E.
-- **Sin nombrarse.** Se llaman E y R, pero no se llaman por su nombre en el diálogo: una letra suelta no se entiende en voz alta. Quién habla se ve por la cola del bocadillo y el color de la palabra.
+- **Sin nombrarse, nunca.** Se llaman E y R, pero no se llaman por su nombre en el diálogo ni aparece en los textos del vídeo (regla de Chiño; `tools/validate.mjs` lo comprueba). Quién habla se ve por la cola del bocadillo y el color de la palabra.
 - **Una línea, una voz.** Si los dos dicen algo a la vez, es una línea `"ambos"` (casi siempre el cierre).
 - **Turnos.** Pregunta → respuesta segura → pregunta que desmonta → respuesta que empeora... Un personaje puede encadenar dos líneas si la segunda es el giro.
 - **R desmonta con una sola pregunta.** "¿Y quién paga la tarjeta?" vale más que una explicación.
