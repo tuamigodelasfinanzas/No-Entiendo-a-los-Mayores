@@ -147,6 +147,13 @@
     let world = '', overlay = '';
     const mouths = {};
     const actors = beat.actors.slice().sort((a, b) => a.z - b.z);
+    function syllables(t) {
+      const ph = t * 5.1 + 0.35 * Math.sin(t * 2.3) + 0.2 * Math.sin(t * 5.7 + 1.1);   // syllable clock, not regular
+      const u = ph - Math.floor(ph);
+      const open = u < 0.4 ? Math.sin(u / 0.4 * Math.PI / 2) : Math.cos((u - 0.4) / 0.6 * Math.PI / 2);   // quick open, slower close
+      const size = 0.5 + 0.25 * Math.sin(Math.floor(ph) * 2.39);                                       // each syllable its own size
+      return 0.08 + size * open * open * 0.9;
+    }
     for (const a of actors) {
       const st = stateAt(a.keys, lt, beat);
       if (st.o === 0 || st.hide) continue;
@@ -156,8 +163,9 @@
         if (st.blink === false) st.blink = 0;
         else if (st.blink == null) { const ph = (gt + (st.who === 'e' ? 0.9 : 2.4)) % 3.9; st.blink = ph < 0.14 ? Math.sin(ph / 0.14 * Math.PI) : 0; }
         const sp = speaking(beat, st.who, gt);
-        // mouth: a fast, uneven open/close while the line plays (sum of two sines, never perfectly regular)
-        st.talk = sp >= 0 && st.mute !== true ? Math.max(0, 0.55 + 0.35 * Math.sin(sp * 17.3) + 0.25 * Math.sin(sp * 29.1 + 1.3)) * Math.min(1, sp * 8) : 0;
+        // mouth: syllables, ~5 a second and a little uneven, eased open and shut and never fully open. The old fast
+        // flapping looked robotic to Chiño (27-10-2026); tools/escena_rig.py follows the real voice the same way
+        st.talk = sp >= 0 && st.mute !== true ? syllables(sp) * Math.min(1, sp * 6) : 0;
         const ln = sp >= 0 ? beat.lines.find(l => (l.who === st.who || l.who === 'ambos') && gt >= l.start && gt <= l.start + l.dur) : null;
         if (ln && gt > ln.start + ln.dur - 0.08) st.talk = 0;
         const ks = LIFE && st.life !== false ? alive(a, st, beat, lt, gt, sp) : { ...st };

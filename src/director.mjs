@@ -18,9 +18,9 @@ export const speakerOf = ln => ['e', 'r', 'ambos'].find(k => typeof ln[k] === 's
 // camera shots (docs/direccion.md §2): two-shot, medium on one kid, close-up on one face
 function shot(name, who) {
   const Y = CHARS.suelo, S = CHARS.escala;
-  const head = Y - 830 * S;                       // world y of the faces
   if (name === 'dos') return { z: 1, x: 540, y: 960 };
   const k = CHARS[who];
+  const head = Y - 830 * S * (k.altura ?? 1);     // world y of his face (R is taller than E)
   // medium: the speaker centred, his face a little under the middle (the bubble goes below it, the cards above)
   if (name === 'medio') { const z = 1.5; return { z, x: k.x, y: head - 80 / z }; }
   if (name === 'cerca') { const z = 2.0; return { z, x: k.x, y: head - 40 / z }; }
@@ -47,7 +47,7 @@ export function build(script, o = {}) {
   const lang = script.idioma || o.lang || 'es';
   const tr = v => (v && typeof v === 'object' ? v[lang] ?? v.es : v);
   const Y = CHARS.suelo, S = CHARS.escala;
-  const base = w => ({ who: w, x: CHARS[w].x, y: Y, s: S, face: CHARS[w].cara_escucha, look: CHARS[w].mira_al_otro, headR: 0, headY: 0, lean: 0, squash: 1, emoteK: 0, lid: 0 });
+  const base = w => ({ who: w, x: CHARS[w].x, y: Y, s: S * (CHARS[w].altura ?? 1), face: CHARS[w].cara_escucha, look: CHARS[w].mira_al_otro, headR: 0, headY: 0, lean: 0, squash: 1, emoteK: 0, lid: 0 });
   const keys = { e: [base('e')], r: [base('r')] };
   const cam = [{ t: 0, ...shot('dos'), e: 'step' }];
   const lines = [], cards = [], sfx = [];

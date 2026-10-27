@@ -7,10 +7,12 @@ import { execFileSync } from 'node:child_process';
 
 export const VOICES = {
   es: {
+    // Natural voices, as the service speaks them: only its own pitch and rate, a little. Any pitch / formant
+    // processing afterwards (asetrate, Rubber Band) sounds metallic to Chiño (27-10-2026): don't add one.
     // E: quick, bright, a little higher (impulsive, always has an idea)
-    e: { voice: 'es-ES-XimenaNeural', rate: '+8%', pitch: '+28Hz' },
+    e: { voice: 'es-ES-XimenaNeural', rate: '+4%', pitch: '+12Hz' },
     // R: calmer, lower and a bit slower (he thinks before asking)
-    r: { voice: 'es-ES-ElviraNeural', rate: '-3%', pitch: '+14Hz' },
+    r: { voice: 'es-ES-ElviraNeural', rate: '-2%', pitch: '+6Hz' },
   },
 };
 export const voiceOn = () => String(process.env.CDM_VOICE ?? 'true') !== 'false';
