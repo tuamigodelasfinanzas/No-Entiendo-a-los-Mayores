@@ -1,0 +1,13 @@
+{
+  "_doc": "Short de presentación del canal: las líneas de voz. tools/presentacion_voces.py las convierte en voz (edge-tts + voz de niño, como src/voice.mjs de la rama de poses) y deja los mp3 en voces/. El workflow presentacion-voces.yml lo hace en GitHub, porque aquí no se llega al servicio de voz.",
+  "lineas": [
+    {"id": "01", "who": "r", "text": "E, ¿qué estamos haciendo aquí?"},
+    {"id": "02", "who": "e", "text": "¡Vamos a explicar cómo funciona el mundo!"},
+    {"id": "03", "who": "r", "text": "¿Todo el mundo?"},
+    {"id": "04", "who": "e", "text": "Todo. Internet, el dinero, el espacio, los inventos..."},
+    {"id": "05", "who": "r", "text": "¿Y tú sabes cómo funciona todo eso?"},
+    {"id": "06", "who": "e", "text": "Bueno... por eso vamos a investigarlo."},
+    {"id": "07", "who": "r", "text": "Esto puede salir muy bien..."},
+    {"id": "08", "who": "e", "text": "¡O muy divertido!"}
+  ]
+}
