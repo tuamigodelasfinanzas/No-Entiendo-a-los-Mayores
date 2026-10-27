@@ -7,10 +7,12 @@ import { execFileSync } from 'node:child_process';
 
 export const VOICES = {
   es: {
+    // edge-tts has no child voices: two adult voices, then `kid` moves pitch AND timbre (formants) up together,
+    // which is what makes a voice sound like a child and not like an adult speaking high (childify below).
     // E: quick, bright, a little higher (impulsive, always has an idea)
-    e: { voice: 'es-ES-XimenaNeural', rate: '+8%', pitch: '+28Hz' },
+    e: { voice: 'es-ES-XimenaNeural', rate: '+6%', pitch: '+10Hz', kid: 1.2 },
     // R: calmer, lower and a bit slower (he thinks before asking)
-    r: { voice: 'es-ES-ElviraNeural', rate: '-3%', pitch: '+14Hz' },
+    r: { voice: 'es-ES-ElviraNeural', rate: '-4%', pitch: '+2Hz', kid: 1.15 },
   },
 };
 export const voiceOn = () => String(process.env.CDM_VOICE ?? 'true') !== 'false';
@@ -19,6 +21,18 @@ export const probe = f => Number(execFileSync('ffprobe', ['-v', 'error', '-show_
 export const estimate = text => Math.max(0.7, String(text).split(/\s+/).filter(Boolean).length / 2.7 + 0.25);
 
 const clean = t => String(t ?? '').replace(/\p{Extended_Pictographic}|\u{FE0F}|\u{200D}/gu, '').replace(/(\d)\s?%/g, '$1 por ciento').replace(/€/g, ' euros').replace(/\s+/g, ' ').trim();
+
+// a child's voice: the clip played f times faster (pitch and formants up by f, like a smaller throat), then
+// stretched back to its length without touching the pitch
+export function childify(file, f) {
+  if (!f || f === 1) return;
+  const tmp = file.replace(/\.mp3$/, '') + '.kid.mp3';
+  const sr = Number(execFileSync('ffprobe', ['-v', 'error', '-select_streams', 'a:0', '-show_entries', 'stream=sample_rate', '-of', 'csv=p=0', file]).toString().trim()) || 24000;
+  try {
+    execFileSync('ffmpeg', ['-y', '-v', 'error', '-i', file, '-af', `asetrate=${Math.round(sr * f)},aresample=${sr},atempo=${(1 / f).toFixed(4)}`, '-c:a', 'libmp3lame', '-q:a', '2', tmp], { stdio: 'pipe' });
+    fs.renameSync(tmp, file);
+  } catch { fs.rmSync(tmp, { force: true }); }
+}
 
 // edge-tts leaves ~0.1 s of silence before and ~0.6 s after every clip: over 10-12 lines that is several seconds
 // of dead air. Trim both ends (keeping a short tail so the last word is not clipped).
@@ -41,7 +55,7 @@ export function tts(text, file, who, lang = 'es', overrides = {}) {
     try {
       fs.rmSync(file, { force: true });
       execFileSync('edge-tts', [...proxy, '--voice', v.voice, `--rate=${v.rate}`, `--pitch=${v.pitch}`, '--file', tf, '--write-media', file], { stdio: 'pipe' });
-      if (fs.existsSync(file) && fs.statSync(file).size > 1000) { fs.rmSync(tf, { force: true }); trim(file); return probe(file); }
+      if (fs.existsSync(file) && fs.statSync(file).size > 1000) { fs.rmSync(tf, { force: true }); trim(file); childify(file, v.kid); return probe(file); }
     } catch (e) { err = String(e.stderr || e.message).slice(-200); }
   }
   fs.rmSync(tf, { force: true });

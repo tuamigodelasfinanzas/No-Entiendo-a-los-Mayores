@@ -97,9 +97,11 @@
     const ahead = at(lt + 0.12);
     if (isNumArr(ahead.look)) st.look = ahead.look;
     // idle: breathing (3.4 s), weight shift (5.3 s), head drift
+    // (the kids are never squashed, Chiño's rule: breathing moves the head up and down with the shoulders)
     const br = Math.sin(gt * 2 * Math.PI / 3.4 + seed);
     st.squash = (st.squash ?? 1) * (1 + 0.006 * br);
-    st.lean = (st.lean ?? 0) + 0.8 * Math.sin(gt * 2 * Math.PI / 5.3 + seed * 0.7);
+    st.headY = (st.headY ?? 0) - 2.5 * br;
+    st.lean = (st.lean ?? 0) + 1.3 * Math.sin(gt * 2 * Math.PI / 5.3 + seed * 0.7);
     st.headR = (st.headR ?? 0) + 1.2 * Math.sin(gt * 2 * Math.PI / 4.1 + seed) + 0.5 * Math.sin(gt * 1.3 + seed * 2);
     // talking: small nods and a light bounce instead of a rigid head
     if (sp >= 0) {

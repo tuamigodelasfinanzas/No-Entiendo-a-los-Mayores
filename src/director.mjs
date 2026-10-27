@@ -134,7 +134,7 @@ export function build(script, o = {}) {
         sfx.push({ s: em === 'bombilla' ? 'ding' : 'pop', l: i, t: 0.1, g: 0.45 });
       }
     }
-    // poses: the speaker's body says what the line is, on the first syllable (a short dissolve, no bounce); the
+    // poses: the speaker's body says what the line is, on the first syllable (half a second: a dissolve with a lean and a head tilt, no bounce); the
     // listener answers a moment later, and only now and then. Two lines of the same kind in a row by the same kid
     // keep the pose, and a kid who has just changed keeps it for one more line: few, calm changes
     for (const w of KIDS) {
@@ -149,8 +149,8 @@ export function build(script, o = {}) {
         next = opts.length ? opts[hash(`${script.id}${i}${w}`) % opts.length] : next[0];
       }
       if (next !== poseNow[w]) {
-        const t0 = talking ? -0.1 : 0.35;
-        keys[w].push({ ...at, t: t0, pose0: poseNow[w], pose: next, poseK: 0, e: 'step' }, { ...at, t: t0 + 0.24, poseK: 1, e: 'io' });
+        const t0 = talking ? -0.25 : 0.35;
+        keys[w].push({ ...at, t: t0, pose0: poseNow[w], pose: next, poseK: 0, e: 'step' }, { ...at, t: t0 + 0.5, poseK: 1, e: 'io' });
         poseNow[w] = next;
         changed[w] = i;
       }

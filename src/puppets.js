@@ -91,11 +91,19 @@
         : `<image href="${img.body}" x="0" y="0" width="${rig.w}" height="${rig.h}"${o < 1 ? ` opacity="${f1(o)}"` : ''}/>`;
     };
     const front = name => (rig.poses?.[name]?.front ? `<image href="${img.fronts[name]}" x="0" y="0" width="${rig.w}" height="${rig.poses[name].h}"/>` : '');
-    // a short dissolve: the old pose goes out while the new one comes in, so both bodies are never seen whole
-    const body = k < 1 && st.pose0 !== st.pose ? layer(st.pose0, Math.min(1, 2 * (1 - k))) + layer(st.pose, Math.min(1, 2 * k)) : layer(st.pose, 1);
+    // a pose change is a gesture, not a cut: while one drawing dissolves into the other the body leans, the head
+    // tilts and dips a little and the body gets a soft motion blur (tk: 0 -> 1 -> 0 over the change)
+    const changing = k < 1 && st.pose0 !== st.pose;
+    const tk = changing ? Math.sin(Math.PI * Math.min(1, Math.max(0, k))) : 0;
+    const mix = changing ? k * k * (3 - 2 * k) : 1;
+    const blur = tk > 0.02 ? `<filter id="${id}pb" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="${f1(5 * tk)}"/></filter>` : '';
+    const layers = changing ? layer(st.pose0, Math.min(1, 1.6 * (1 - mix))) + layer(st.pose, Math.min(1, 1.6 * mix)) : layer(st.pose, 1);
+    const body = blur ? `${blur}<g filter="url(#${id}pb)">${layers}</g>` : layers;
+    const lean = (st.lean ?? 0) + 2.4 * tk * (st.who === 'e' ? 1 : -1);
+    const hR = (st.headR ?? 0) - 1.8 * tk * (st.who === 'e' ? 1 : -1), hY = (st.headY ?? 0) + 6 * tk;
     // hands on the head or the face go with the head
     const fr = k < 0.5 && st.pose0 !== st.pose ? front(st.pose0) : front(st.pose);
-    const head = `<g transform="translate(${f1(st.headX ?? 0)} ${f1(st.headY ?? 0)}) rotate(${f1(st.headR ?? 0)} ${px} ${py})">
+    const head = `<g transform="translate(${f1(st.headX ?? 0)} ${f1(hY)}) rotate(${f1(hR)} ${px} ${py})">
         <image href="${img.head}" x="0" y="0" width="${rig.w}" height="${rig.h}"/>
         ${face(rig, img, st)}
         ${fr}
@@ -104,9 +112,9 @@
     const em = emote(st.emote, st.emoteK ?? 1, rig.center + (st.who === 'e' ? 190 : -190), rig.bbox[1] + 40);
     const flip = st.flip ? -1 : 1;
     // the body: the drawing, or one of Chiño's poses (tools/prepare_poses.py) under the same head. A pose change
-    // crossfades in a few frames (pose0 -> pose with poseK 0 -> 1), and a pose with the feet elsewhere (sitting,
+    // dissolves with a small gesture (pose0 -> pose with poseK 0 -> 1), and a pose with the feet elsewhere (sitting,
     // jumping) moves the head with it (dy)
-    return `<g transform="translate(${f1(st.x)} ${f1(st.y)}) rotate(${f1(st.lean ?? 0)}) scale(${f1(s * flip)} ${f1(s)}) translate(${-rig.center} ${-rig.feet})" opacity="${st.o ?? 1}">
+    return `<g transform="translate(${f1(st.x)} ${f1(st.y)}) rotate(${f1(lean)}) scale(${f1(s * flip)} ${f1(s)}) translate(${-rig.center} ${-rig.feet})" opacity="${st.o ?? 1}">
       ${sh}<g transform="translate(0 ${f1(poseDy(st))})">${body}${head}</g>${em}</g>`;
   }
 
