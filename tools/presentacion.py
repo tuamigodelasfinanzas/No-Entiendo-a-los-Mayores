@@ -38,6 +38,26 @@ MOUTH = {'e': {'y': 406, 'd': 8, 'ox': 456.5, 'ow': 29, 'inside': (74, 14, 8)},
          'r': {'y': 363, 'd': 7, 'ox': 454.5, 'ow': 27, 'inside': (90, 26, 16)}}
 T, Rm, Sc, ap, ease = K['e'].T, K['e'].R, K['e'].Sc, K['e'].ap, K['e'].ease
 
+
+def real_wrist(m, name):
+    """The pointing hand of the rig has its wrist in the middle of the palm (so the index follows the forearm when
+    pointing sideways); pointing up, that hides the palm in the sleeve and only a finger and the thumb show, like a
+    claw. Here its wrist goes back to the real one, the back edge of the hand, and its axis to the fingertip."""
+    a = np.asarray(m.IMG['hand_' + name])[..., 3] > 128
+    ys, xs = np.nonzero(a)
+    back = xs.max() if name.endswith('_r') else xs.min()
+    band = np.abs(xs - back) < 8
+    wx = back - 7 if name.endswith('_r') else back + 7
+    wy = float(np.median(ys[band]))
+    d2 = (xs - wx) ** 2 + (ys - wy) ** 2
+    i = d2.argmax()
+    m.HANDS[name] = {'wrist': [float(wx), wy], 'dir': math.degrees(math.atan2(ys[i] - wy, xs[i] - wx))}
+
+
+for _c in K:
+    for _sd in ('l', 'r'):
+        real_wrist(K[_c], 'senala_' + _sd)
+
 # ---------------------------------------------------------------- arm poses
 # side -> (upper arm out, forearm out, hand, hand turn) in degrees away from hanging down, outwards (rig_test.arm).
 # For E and R the 'r' side is the one on the right of the screen.
@@ -181,6 +201,7 @@ def settle(a, b, s):
 
 
 # ---------------------------------------------------------------- one kid
+HAND_OUT = {}                                   # hand -> px of the drawing it comes further out of the sleeve
 WRISTS = []                                     # where the hands went (for checking the joins)
 WRIST_INFO = {}
 
@@ -288,6 +309,10 @@ def kid(img, c, x, floor, S, p):
     for side in ('l', 'r'):
         up, fore, hand, rot, where = (list(p['arms'][side]) + [None])[:5]
         Mu, Mf, Mhd = m.arm(side, Mt, S, tilt, up, fore, hand, rot)
+        th_f = math.radians(90 + (1 if side == 'l' else -1) * fore) + tilt
+        out = HAND_OUT.get(hand.rstrip('~'), 0)
+        if out:                                 # this hand sits further out of the cuff (its palm was swallowed)
+            Mhd = T(*(np.array([math.cos(th_f), math.sin(th_f)]) * out * S)) @ Mhd
         Sw, Ew, Ww = ap(Mu, J['shoulder_' + side]), ap(Mu, J['elbow_' + side]), ap(Mf, J['wrist_' + side])
         sgn = 1 if side == 'l' else -1
         th_u = math.radians(90 + sgn * up) + tilt
