@@ -68,6 +68,14 @@
     return mouth + (shut ? `<image href="${img.blink}" x="0" y="0" width="${rig.w}" height="${rig.h}"/>` : '');
   }
 
+  // how far a pose moves the kid down (sitting, crouching...), blended while the pose changes
+  function poseDy(st) {
+    const rig = RIG[st.who], dy = n => (n && rig.poses?.[n] ? rig.feet - rig.poses[n].feet : 0);
+    const k = Math.min(1, Math.max(0, st.poseK ?? 1));
+    if (st.pose0 === st.pose || k === 1) return dy(st.pose);
+    return dy(st.pose0) + (dy(st.pose) - dy(st.pose0)) * k;
+  }
+
   function kid(st) {
     const rig = RIG[st.who], img = IMG[st.who];
     const id = `k${st.who}`;
@@ -76,15 +84,38 @@
     const s = st.s ?? 1;
     const [px, py] = rig.pivot;
     const sh = `<ellipse cx="${rig.center}" cy="${rig.feet + 4}" rx="${f1(200 * (1 - (st.jump ?? 0) * 0.002))}" ry="26" fill="url(#kshadow)"/>`;
-    const head = `<g transform="translate(${f1(st.headX ?? 0)} ${f1(st.headY ?? 0)}) rotate(${f1(st.headR ?? 0)} ${px} ${py})">
+    const k = st.poseK ?? 1;
+    const layer = (name, o) => {
+      const pz = name && rig.poses?.[name];
+      return pz ? `<image href="${img.poses[name]}" x="0" y="0" width="${rig.w}" height="${pz.h}"${o < 1 ? ` opacity="${f1(o)}"` : ''}/>`
+        : `<image href="${img.body}" x="0" y="0" width="${rig.w}" height="${rig.h}"${o < 1 ? ` opacity="${f1(o)}"` : ''}/>`;
+    };
+    const front = name => (rig.poses?.[name]?.front ? `<image href="${img.fronts[name]}" x="0" y="0" width="${rig.w}" height="${rig.poses[name].h}"/>` : '');
+    // a pose change is a gesture, not a cut: while one drawing dissolves into the other the body leans, the head
+    // tilts and dips a little and the body gets a soft motion blur (tk: 0 -> 1 -> 0 over the change)
+    const changing = k < 1 && st.pose0 !== st.pose;
+    const tk = changing ? Math.sin(Math.PI * Math.min(1, Math.max(0, k))) : 0;
+    const mix = changing ? k * k * (3 - 2 * k) : 1;
+    const blur = tk > 0.02 ? `<filter id="${id}pb" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="${f1(5 * tk)}"/></filter>` : '';
+    const layers = changing ? layer(st.pose0, Math.min(1, 1.6 * (1 - mix))) + layer(st.pose, Math.min(1, 1.6 * mix)) : layer(st.pose, 1);
+    const body = blur ? `${blur}<g filter="url(#${id}pb)">${layers}</g>` : layers;
+    const lean = (st.lean ?? 0) + 2.4 * tk * (st.who === 'e' ? 1 : -1);
+    const hR = (st.headR ?? 0) - 1.8 * tk * (st.who === 'e' ? 1 : -1), hY = (st.headY ?? 0) + 6 * tk;
+    // hands on the head or the face go with the head
+    const fr = k < 0.5 && st.pose0 !== st.pose ? front(st.pose0) : front(st.pose);
+    const head = `<g transform="translate(${f1(st.headX ?? 0)} ${f1(hY)}) rotate(${f1(hR)} ${px} ${py})">
         <image href="${img.head}" x="0" y="0" width="${rig.w}" height="${rig.h}"/>
         ${face(rig, img, st)}
+        ${fr}
         ${st.blush ? `<g opacity="${f1(st.blush)}"><ellipse cx="${rig.eyes[0].x - 10}" cy="${rig.mouth.y - 22}" rx="34" ry="18" fill="#FF6B6B" opacity="0.35"/><ellipse cx="${rig.eyes[1].x + 10}" cy="${rig.mouth.y - 22}" rx="34" ry="18" fill="#FF6B6B" opacity="0.35"/></g>` : ''}
       </g>`;
     const em = emote(st.emote, st.emoteK ?? 1, rig.center + (st.who === 'e' ? 190 : -190), rig.bbox[1] + 40);
     const flip = st.flip ? -1 : 1;
-    return `<g transform="translate(${f1(st.x)} ${f1(st.y)}) rotate(${f1(st.lean ?? 0)}) scale(${f1(s * flip)} ${f1(s)}) translate(${-rig.center} ${-rig.feet})" opacity="${st.o ?? 1}">
-      ${sh}<image href="${img.body}" x="0" y="0" width="${rig.w}" height="${rig.h}"/>${head}${em}</g>`;
+    // the body: the drawing, or one of Chiño's poses (tools/prepare_poses.py) under the same head. A pose change
+    // dissolves with a small gesture (pose0 -> pose with poseK 0 -> 1), and a pose with the feet elsewhere (sitting,
+    // jumping) moves the head with it (dy)
+    return `<g transform="translate(${f1(st.x)} ${f1(st.y)}) rotate(${f1(lean)}) scale(${f1(s * flip)} ${f1(s)}) translate(${-rig.center} ${-rig.feet})" opacity="${st.o ?? 1}">
+      ${sh}<g transform="translate(0 ${f1(poseDy(st))})">${body}${head}</g>${em}</g>`;
   }
 
   // ---------- icons for the insert cards (centered at 0,0, about 200 px) ----------
@@ -218,5 +249,5 @@
   }
 
   const SHARED_DEFS = `<radialGradient id="kshadow"><stop offset="0" stop-color="#000" stop-opacity="0.28"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>`;
-  window.PUPPETS = { kid, PROPS, ICONS, SETS, EXPR, COLORS, FONT, INK, esc, wrap, SHARED_DEFS };
+  window.PUPPETS = { kid, poseDy, PROPS, ICONS, SETS, EXPR, COLORS, FONT, INK, esc, wrap, SHARED_DEFS };
 })();

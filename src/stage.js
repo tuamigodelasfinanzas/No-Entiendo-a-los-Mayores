@@ -97,9 +97,11 @@
     const ahead = at(lt + 0.12);
     if (isNumArr(ahead.look)) st.look = ahead.look;
     // idle: breathing (3.4 s), weight shift (5.3 s), head drift
+    // (the kids are never squashed, Chiño's rule: breathing moves the head up and down with the shoulders)
     const br = Math.sin(gt * 2 * Math.PI / 3.4 + seed);
     st.squash = (st.squash ?? 1) * (1 + 0.006 * br);
-    st.lean = (st.lean ?? 0) + 0.8 * Math.sin(gt * 2 * Math.PI / 5.3 + seed * 0.7);
+    st.headY = (st.headY ?? 0) - 2.5 * br;
+    st.lean = (st.lean ?? 0) + 1.3 * Math.sin(gt * 2 * Math.PI / 5.3 + seed * 0.7);
     st.headR = (st.headR ?? 0) + 1.2 * Math.sin(gt * 2 * Math.PI / 4.1 + seed) + 0.5 * Math.sin(gt * 1.3 + seed * 2);
     // talking: small nods and a light bounce instead of a rigid head
     if (sp >= 0) {
@@ -157,14 +159,18 @@
         else if (st.blink == null) { const ph = (gt + (st.who === 'e' ? 0.9 : 2.4)) % 3.9; st.blink = ph < 0.14 ? Math.sin(ph / 0.14 * Math.PI) : 0; }
         const sp = speaking(beat, st.who, gt);
         // mouth: a fast, uneven open/close while the line plays (sum of two sines, never perfectly regular)
-        st.talk = sp >= 0 && st.mute !== true ? Math.max(0, 0.55 + 0.35 * Math.sin(sp * 17.3) + 0.25 * Math.sin(sp * 29.1 + 1.3)) * Math.min(1, sp * 8) : 0;
+        // mouth: follows the loudness of the line's voice (ln.env, 50 per second, render.mjs): shut in the pauses,
+        // wider on the stressed syllables; old lines without env keep the two-sine flap
         const ln = sp >= 0 ? beat.lines.find(l => (l.who === st.who || l.who === 'ambos') && gt >= l.start && gt <= l.start + l.dur) : null;
+        const envAt = (e, x) => { const i = Math.floor(x), f = x - i; return (e[i] ?? 0) * (1 - f) + (e[i + 1] ?? 0) * f; };
+        st.talk = sp < 0 || st.mute === true ? 0 : ln?.env?.length ? envAt(ln.env, sp * 50)
+          : Math.max(0, 0.55 + 0.35 * Math.sin(sp * 17.3) + 0.25 * Math.sin(sp * 29.1 + 1.3)) * Math.min(1, sp * 8);
         if (ln && gt > ln.start + ln.dur - 0.08) st.talk = 0;
         const ks = LIFE && st.life !== false ? alive(a, st, beat, lt, gt, sp) : { ...st };
         svg = kid(ks);
         // where the mouth is on screen, so the caption bubble can point at whoever speaks
         const rig = window.KID_RIG[ks.who], m = rig.jaw || rig.mouth, ksc = ks.s ?? 1;
-        let wx = ks.x + (m.x - rig.center) * ksc * (ks.flip ? -1 : 1) + (ks.headX ?? 0) * ksc, wy = ks.y + (m.y - rig.feet) * ksc + (ks.headY ?? 0) * ksc;
+        let wx = ks.x + (m.x - rig.center) * ksc * (ks.flip ? -1 : 1) + (ks.headX ?? 0) * ksc, wy = ks.y + (m.y - rig.feet) * ksc + ((ks.headY ?? 0) + window.PUPPETS.poseDy(ks)) * ksc;
         if (a.depth != null && a.depth !== 1) { const k = (1 + (cz - 1) * a.depth) / cz; wx = cx + (wx - cx) * k + (cx - W / 2) * (1 - a.depth); wy = cy + (wy - cy) * k + (cy - H / 2) * (1 - a.depth); }
         mouths[ks.who] = { x: W / 2 + (wx - cx) * cz, y: H / 2 + (wy - cy) * cz };
       } else if (PROPS[a.type]) {

@@ -18,6 +18,7 @@ const block = name => { const a = puppets.indexOf(`const ${name} = {`); const b 
 const keysOf = src => [...src.matchAll(/^ {4}([a-záéíóúñ]+): /gim)].map(m => m[1]);
 const EXPR = keysOf(block('EXPR')), ICONS = keysOf(block('ICONS')), SETS = keysOf(block('SETS'));
 const director = fs.readFileSync(path.join(ROOT, 'src/director.mjs'), 'utf8');
+const POSES = Object.fromEntries(['e', 'r'].map(w => [w, Object.keys(JSON.parse(fs.readFileSync(path.join(ROOT, `assets/characters/${w}/rig.json`), 'utf8')).poses || {})]));
 const GESTURES = [...director.slice(director.indexOf('const GESTURES'), director.indexOf('};', director.indexOf('const GESTURES'))).matchAll(/^ {2}([a-z]+): /gm)].map(m => m[1]);
 const EMOTES = ['?', '!', '??', '...', 'bombilla', 'gota', 'corazon', 'lio', 'brillo'];
 const REACTIONS = ['silencio', 'mirada', 'parpadeo', 'giro', 'arriba'];
@@ -59,6 +60,7 @@ for (const f of files) {
   if (s.escenario && !SETS.includes(s.escenario)) err(id, `escenario desconocido "${s.escenario}" (${SETS.join(', ')})`);
   if (s.duracion && !DURATION[s.duracion]) err(id, `duracion debe ser ${Object.keys(DURATION).join(', ')}`);
   if (String(s.titulo).length > 70) warn(id, 'título de más de 70 caracteres (se corta en YouTube con #Shorts)');
+  for (const k of ['titulo', 'texto', 'aprendizaje']) { const v = typeof s[k] === 'object' ? Object.values(s[k] || {}).join(' ') : String(s[k] ?? ''); if (/(^|[\s¡¿"(])(E|R)([\s,.!?:;)"]|$)/.test(v) || /\b(edu|rub[eé]n)\b/i.test(v)) err(id, `"${k}": los niños nunca se llaman por su nombre`); }
   if (String(s.aprendizaje || '').length < 40) err(id, 'el "aprendizaje" es demasiado corto: cada episodio deja algo útil');
   if (!Array.isArray(s.lineas) || !s.lineas.length) continue;
 
@@ -74,10 +76,17 @@ for (const f of files) {
       const t = ln[who];
       if (!t.trim()) err(id, `${where}: texto vacío`);
       if (t.length > 90) err(id, `${where}: ${t.length} caracteres (máx. 90: los niños hablan corto)`);
+      // Chiño's rule: the kids never call each other (or themselves) by name, in the video or in the texts
+      if (/(^|[\s¡¿"(])(E|R)([\s,.!?:;)"]|$)/.test(t) || /\b(edu|rub[eé]n)\b/i.test(t)) err(id, `${where}: los niños nunca se llaman por su nombre`);
       for (const w of norm(t).split(/[^a-zñ]+/)) if (AVOID.map(norm).includes(w)) err(id, `${where}: evita "${w}" (muy local o impropio; docs/guia-editorial.md §5)`);
       if (ln.cara && !EXPR.includes(ln.cara)) err(id, `${where}: cara "${ln.cara}" no existe (${EXPR.join(', ')})`);
       if (ln.otro && !EXPR.includes(ln.otro)) err(id, `${where}: cara del otro "${ln.otro}" no existe`);
       for (const g of [ln.gesto, ln.gesto_otro]) if (g && !GESTURES.includes(g)) err(id, `${where}: gesto "${g}" no existe (${GESTURES.join(', ')})`);
+      {
+        const sp = speakerOf(ln), oth = sp === 'e' ? 'r' : 'e';
+        if (ln.pose && (sp === 'ambos' || !POSES[sp].includes(ln.pose))) err(id, `${where}: pose "${ln.pose}" no existe para ${sp} (${sp === 'ambos' ? 'no se usa con ambos' : POSES[sp].join(', ')})`);
+        if (ln.pose_otro && (sp === 'ambos' || !POSES[oth].includes(ln.pose_otro))) err(id, `${where}: pose_otro "${ln.pose_otro}" no existe para ${oth}`);
+      }
       for (const e of [ln.emote, ln.emote_otro]) if (e && !EMOTES.includes(e)) err(id, `${where}: emote "${e}" no existe (${EMOTES.join(', ')})`);
       if (ln.tarjeta) {
         cards++;

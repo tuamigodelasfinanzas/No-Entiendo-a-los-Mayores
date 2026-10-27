@@ -9,6 +9,8 @@ import path from 'node:path';
 import { execFileSync, spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { tts, voiceOn, estimate } from './voice.mjs';
+
+const ENV_HZ = 50;   // values per second of the mouth envelope of each line (envelope / syllables below)
 import { build } from './director.mjs';
 import { post } from './post.mjs';
 
@@ -43,7 +45,8 @@ for (const [i, b] of ep.beats.entries()) {
         }
       } catch (e) { console.warn('::warning::voice failed, continuing without voice: ' + e.message); useVoice = false; clips.length = 0; d = estimate(ln.text); }
     }
-    beat.lines.push({ who: ln.who, text: ln.text, start: t + lt, dur: d, words: wordTimes(ln.text, d) });
+    const env = useVoice ? mergeEnv(clips.filter(c => c.at === t + lt).map(c => envelope(c.file))) : syllables(ln.text, d);
+    beat.lines.push({ who: ln.who, text: ln.text, start: t + lt, dur: d, words: wordTimes(ln.text, d), env });
     if (useVoice) console.log(`  ${ln.who.padEnd(5)} ${d.toFixed(2)} s (est. ${estimate(ln.text).toFixed(2)})  ${ln.text}`);
     lt += d + (ln.gap ?? 0.3);
   }
@@ -56,6 +59,39 @@ const total = t;
 console.log(`${ep.id}: ${beats[0].lines.length} lines, ${total.toFixed(1)} s${useVoice ? '' : ' (no voice, estimated)'}`);
 
 // word timings for the captions: spread over the clip by length (long words take longer)
+// the mouth follows the voice: loudness of the clip, ENV_HZ values per second, 0..1 (fast to open, a little
+// slower to close, like a jaw), so it shuts in the pauses and opens more on the stressed syllables
+function envelope(file) {
+  const raw = execFileSync('ffmpeg', ['-v', 'error', '-i', file, '-ac', '1', '-ar', '8000', '-f', 's16le', '-']);
+  const x = new Int16Array(raw.buffer, raw.byteOffset, raw.length >> 1), n = 8000 / ENV_HZ, out = [];
+  for (let i = 0; i + n <= x.length; i += n) {
+    let e = 0;
+    for (let j = i; j < i + n; j++) e += x[j] * x[j];
+    out.push(Math.sqrt(e / n));
+  }
+  const sorted = [...out].sort((a, b) => a - b), top = sorted[Math.floor(sorted.length * 0.95)] || 1, floor = top * 0.08;
+  let v = 0;
+  return out.map(e => { const k = Math.min(1, Math.max(0, (e - floor) / (top - floor))); v += (k - v) * (k > v ? 0.7 : 0.35); return +v.toFixed(2); });
+}
+function mergeEnv(envs) {
+  if (envs.length < 2) return envs[0] || [];
+  return envs[0].map((v, i) => Math.max(...envs.map(e => e[i] ?? 0)));
+}
+// without voice (local previews): one bump per syllable (vowel group), closed between words
+function syllables(text, d) {
+  const out = new Array(Math.ceil(d * ENV_HZ)).fill(0);
+  let t0 = 0;
+  for (const { w, end } of wordTimes(text, d)) {
+    const syl = Math.max(1, (w.toLowerCase().match(/[aeiouáéíóúü]+/g) || []).length), len = (end - t0) * 0.85;
+    for (let k = 0; k < syl; k++) {
+      const a = t0 + len * k / syl, b = t0 + len * (k + 1) / syl, h = 0.6 + 0.4 * ((w.length * 7 + k * 13) % 5) / 4;
+      for (let i = Math.floor(a * ENV_HZ); i < Math.min(out.length, Math.ceil(b * ENV_HZ)); i++) out[i] = +(h * Math.sin(Math.PI * Math.min(1, Math.max(0, (i / ENV_HZ - a) / (b - a))))).toFixed(2);
+    }
+    t0 = end;
+  }
+  return out;
+}
+
 function wordTimes(text, d) {
   const ws = String(text).split(/\s+/).filter(Boolean);
   const wt = ws.map(w => 1.2 + w.replace(/[^\p{L}\p{N}]/gu, '').length);
@@ -106,12 +142,18 @@ await page.route(`${ORIGIN}/**`, r => {
 await page.goto(`${ORIGIN}/`);
 const rigs = Object.fromEntries(['e', 'r'].map(w => [w, JSON.parse(fs.readFileSync(path.join(ROOT, `assets/characters/${w}/rig.json`), 'utf8'))]));
 const imgs = Object.fromEntries(['e', 'r'].map(w => [w, Object.fromEntries(['head', 'body', 'blink', 'jaw'].map(k => [k, `${ORIGIN}/assets/characters/${w}/${k}.png`]))]));
+// Chiño's poses (tools/prepare_poses.py): only the ones this episode uses, so the page loads fast
+const used = Object.fromEntries(['e', 'r'].map(w => [w, new Set(ep.beats.flatMap(b => (b.actors || []).filter(a => a.type === 'kid' && a.id === w).flatMap(a => a.k.flatMap(k => [k.pose, k.pose0]))).filter(n => n && rigs[w].poses?.[n]))]));
+for (const w of ['e', 'r']) {
+  imgs[w].poses = Object.fromEntries([...used[w]].map(n => [n, `${ORIGIN}/assets/characters/${w}/poses/${n}.png`]));
+  imgs[w].fronts = Object.fromEntries([...used[w]].filter(n => rigs[w].poses[n].front).map(n => [n, `${ORIGIN}/assets/characters/${w}/poses/${n}-front.png`]));
+}
 await page.evaluate(d => { window.DATA = d.data; window.KID_RIG = d.rigs; window.KID_IMG = d.imgs; }, { data: { ep, beats, w: W, h: H, fps: FPS, life: process.env.CDM_LIFE !== '0' }, rigs, imgs });
 for (const f of ['puppets.js', 'stage.js']) await page.addScriptTag({ path: path.join(ROOT, 'src', f) });
 await page.waitForFunction('window.ready === true');
 await page.evaluate('document.fonts.ready');
 // decode the character layers before the first frame
-await page.evaluate(async urls => { await Promise.all(urls.map(u => new Promise(res => { const i = new Image(); i.onload = i.onerror = res; i.src = u; }))); }, Object.values(imgs).flatMap(o => Object.values(o)));
+await page.evaluate(async urls => { await Promise.all(urls.map(u => new Promise(res => { const i = new Image(); i.onload = i.onerror = res; i.src = u; }))); }, Object.values(imgs).flatMap(o => Object.values(o).flatMap(v => (typeof v === 'string' ? [v] : Object.values(v)))));
 
 const video = path.join(work, 'video.mp4');
 const ff = spawn('ffmpeg', ['-y', '-v', 'error', '-f', 'image2pipe', '-framerate', String(FPS), '-c:v', 'mjpeg', '-i', '-',

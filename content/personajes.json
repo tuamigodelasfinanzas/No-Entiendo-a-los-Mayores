@@ -1,5 +1,5 @@
 {
-  "_doc": "Ficha técnica de los personajes (la biblia completa está en docs/biblia-personajes.md). El director (src/director.mjs) lee de aquí nombres, colores, posición en pantalla y caras por defecto; las voces están en src/voice.mjs.",
+  "_doc": "Ficha técnica de los personajes (la biblia completa está en docs/biblia-personajes.md). El director (src/director.mjs) lee de aquí nombres, colores, posición en pantalla y caras por defecto; las voces están en src/voice.mjs. 'talla' escala a cada niño sobre 'escala': R es más alto que E (unos 15 %, como en la foto de referencia de Chiño).",
   "e": {
     "nombre": {
       "es": "E"
@@ -13,7 +13,8 @@
     "mira_al_otro": [
       0.55,
       0
-    ]
+    ],
+    "talla": 0.94
   },
   "r": {
     "nombre": {
@@ -28,7 +29,8 @@
     "mira_al_otro": [
       -0.55,
       0
-    ]
+    ],
+    "talla": 1.08
   },
   "suelo": 1900,
   "escala": 1.15

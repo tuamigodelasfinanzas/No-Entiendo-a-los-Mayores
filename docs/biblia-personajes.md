@@ -15,7 +15,8 @@ Los diseños son los de las hojas de Chiño (`assets/characters/source/`). `tool
 | Color de marca | Rojo `#D7322E` (sudadera) | Azul `#1F6FE0` (sudadera) |
 | Silueta | Pelo castaño rizado y alborotado, más ancho arriba | Pelo rubio corto y en punta, cabeza más redonda |
 | Ropa | Sudadera roja con capucha, vaqueros, zapatillas blancas con rayas de colores | Sudadera azul con capucha, camiseta blanca, vaqueros oscuros, zapatillas blancas **lisas** |
-| Voz | `es-ES-XimenaNeural`, +8 % velocidad, +28 Hz: rápida y brillante | `es-ES-ElviraNeural`, −3 % velocidad, +14 Hz: más pausada y grave |
+| Altura | Más bajo (`talla` 0,94 en `content/personajes.json`) | Más alto, unos 15 % más que E (`talla` 1,08) |
+| Voz | `es-ES-XimenaNeural` +6 %, +20 Hz, y voz de niño ×1,14 (`src/voice.mjs`): rápida y brillante | `es-ES-ElviraNeural` −4 %, +10 Hz, voz de niño ×1,10: más pausada y grave |
 | En pantalla | Siempre a la izquierda | Siempre a la derecha |
 | Cara al hablar | `convencido` | `curioso` |
 | Cara al escuchar | `sonrisa` | `neutral` |
