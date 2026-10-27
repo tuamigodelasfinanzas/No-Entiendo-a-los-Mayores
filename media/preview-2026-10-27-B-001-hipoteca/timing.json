@@ -1,6 +1,6 @@
 {
  "id": "001-hipoteca",
- "total": 32.82,
+ "total": 32.84,
  "voice": true,
  "lines": [
   {
@@ -54,18 +54,18 @@
   {
    "who": "r",
    "start": 25.24,
-   "dur": 1.9,
+   "dur": 1.92,
    "text": "¿Y mientras tanto, de quién es?"
   },
   {
    "who": "e",
-   "start": 27.42,
+   "start": 27.44,
    "dur": 1.27,
    "text": "Un poquito del banco."
   },
   {
    "who": "ambos",
-   "start": 30.17,
+   "start": 30.19,
    "dur": 1.32,
    "text": "Cosas de mayores."
   }
