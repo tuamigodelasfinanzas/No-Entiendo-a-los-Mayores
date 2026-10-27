@@ -29,8 +29,8 @@ JOINTS = {
     'pelvis': [450, 812],
     'hip_l': [385, 812], 'knee_l': [362, 946], 'ankle_l': [338, 1058],
     'hip_r': [512, 812], 'knee_r': [510, 946], 'ankle_r': [518, 1058],
-    'shoulder_l': [322, 532], 'elbow_l': [292, 648], 'wrist_l': [338, 746],
-    'shoulder_r': [586, 532], 'elbow_r': [614, 648], 'wrist_r': [564, 750],
+    'shoulder_l': [320, 548], 'elbow_l': [302, 650], 'wrist_l': [338, 746],
+    'shoulder_r': [588, 548], 'elbow_r': [597, 648], 'wrist_r': [564, 750],
 }
 
 # the arms in the drawing (hands in the pockets): outline of each sleeve, and the elbow crease that splits it
@@ -49,7 +49,8 @@ HEM = 766                                                           # bottom of 
 HOODIE_LINE = np.array([92, 20, 22.0])
 
 # hands from the MANOS row of the character sheet (E_data_sheet.jpg, 853x1280): box, wrist, and the direction
-# wrist -> knuckles in degrees (image coords, y down). They are E's left hand; the right one is the mirror.
+# wrist -> knuckles in degrees (image coords, y down). They are E's right hand (on the
+# left of the screen); the other one is the mirror.
 SHEET = 'source/e-sheet.jpg'
 HANDS = {
     'abierta': {'box': (20, 701, 86, 775), 'wrist': (52, 768), 'dir': -90},
@@ -112,13 +113,32 @@ def cut_hands(out, meta):
         img = Image.fromarray(np.dstack([crop, al]).astype(np.uint8), 'RGBA')
         img = img.resize((round(img.width * HAND_SCALE), round(img.height * HAND_SCALE)), Image.LANCZOS)
         wx, wy = (h['wrist'][0] - x0) * HAND_SCALE, (h['wrist'][1] - y0) * HAND_SCALE
-        for side in ('r', 'l'):
-            piece = img if side == 'r' else img.transpose(Image.FLIP_LEFT_RIGHT)
-            px = wx if side == 'r' else piece.width - wx
-            d = h['dir'] if side == 'r' else 180 - h['dir']
+        for side in ('l', 'r'):
+            piece = img if side == 'l' else img.transpose(Image.FLIP_LEFT_RIGHT)
+            px = wx if side == 'l' else piece.width - wx
+            d = h['dir'] if side == 'l' else 180 - h['dir']
             piece.save(os.path.join(out, f'hand_{name}_{side}.png'), optimize=True)
             meta['pieces'][f'hand_{name}_{side}'] = {'x': 0, 'y': 0}
             meta['hands'][f'{name}_{side}'] = {'wrist': [px, wy], 'dir': d}
+
+
+def capsule(rgb, core, ends):
+    """A segment of sleeve: its pixels (core) plus a round end at each joint (ring: squared distance to the joint,
+    radius). The round ends are filled from the sleeve around them and get the hoodie's outline on their rim."""
+    disks = np.zeros_like(core)
+    rims = np.zeros_like(core)
+    for ring, rad in ends:
+        disks |= ring <= rad ** 2
+        rims |= (ring <= rad ** 2) & (ring >= (rad - 3) ** 2)
+    ys, xs = np.where(disks | core)
+    sl = (slice(ys.min() - 2, ys.max() + 3), slice(xs.min() - 2, xs.max() + 3))
+    fill = rgb.copy()
+    hole = disks & ~core
+    fill[sl] = harmonic(rgb[sl], hole[sl], core[sl], iters=500)
+    fill[rims & ~core] = HOODIE_LINE
+    ca = soft(core, 0.7)
+    out_rgb = rgb * ca[..., None] + fill * (1 - ca[..., None])
+    return out_rgb, np.maximum(ca, soft(disks, 0.7))
 
 
 def arms(rgb, alpha, torso_a, xx, yy):
@@ -136,23 +156,20 @@ def arms(rgb, alpha, torso_a, xx, yy):
         ex, ey = JOINTS['elbow_' + side]
         sx, sy = JOINTS['shoulder_' + side]
         polys = soft(poly, 0.8)
-        # upper arm (the torso keeps a round shoulder under it, so the joint never opens)
-        up = alpha * polys * soft(yy < crease, 1.0)
         sring = (xx - sx) ** 2 + (yy - sy) ** 2
+        ering = (xx - ex) ** 2 + (yy - ey) ** 2
         # the cut side of the sleeve (inside the drawing) gets the hoodie's outline, like the outer side has
         inner = grow(~poly, 2) & poly & (alpha > 0.5) & ~grow(alpha < 0.3, 4)
         k = soft(inner, 0.6)[..., None] * 0.9
-        pieces['upperarm_' + side] = (rgb * (1 - k) + HOODIE_LINE * k, up)
-        # forearm, with the elbow disk
-        ering = (xx - ex) ** 2 + (yy - ey) ** 2
-        erad = 30
+        lined = rgb * (1 - k) + HOODIE_LINE * k
         r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
         skin_all = (r > 190) & (g > 120) & (b > 80) & (r - b > 50) & (g - b > 15) & (yy > 720)
-        fa = alpha * polys * soft((yy >= crease) | (ering <= (erad - 2) ** 2), 1.0) * (1 - soft(grow(skin_all, 1), 0.8))
-        disk_rgb = np.where((ering >= (erad - 3) ** 2)[..., None], HOODIE_LINE, sleeve)
-        fa_rgb = rgb * (1 - k) + HOODIE_LINE * k
-        fa_rgb = fa_rgb * fa[..., None] + disk_rgb * (1 - fa[..., None])
-        pieces['forearm_' + side] = (fa_rgb, np.maximum(fa, soft(ering <= erad ** 2, 0.8)))
+        # each segment ends round at its joints (a disk as wide as the sleeve there), so nothing opens or pokes
+        # out when the arm bends: the disk is filled from the sleeve itself and outlined where it shows
+        up_core = poly & (alpha > 0.5) & (yy < crease)
+        fa_core = poly & (alpha > 0.5) & (yy >= crease) & ~grow(skin_all, 1)
+        pieces['upperarm_' + side] = capsule(lined, up_core, [(sring, 24), (ering, 42)])
+        pieces['forearm_' + side] = capsule(lined, fa_core, [(ering, 42)])
         # torso: the sleeve out but a round shoulder (it stays, under the arm); the new side gets the outline.
         # 3 px more than the sleeve, so no light rim of the old arm is left around the hoodie
         removed = grow(poly, 3) & (sring > 50 ** 2) & (yy > JOINTS['shoulder_' + side][1] - 10)
