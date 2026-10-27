@@ -1,0 +1,55 @@
+{
+ "_doc": "Líneas de 002-no-tengo-tiempo para las voces (tools/episodio.py lineas). Nunca se llaman por su nombre.",
+ "lineas": [
+  {
+   "id": "01",
+   "who": "e",
+   "text": "¿Por qué los mayores dicen que no tienen tiempo?"
+  },
+  {
+   "id": "02",
+   "who": "r",
+   "text": "Porque trabajan, hacen la compra, la cena, la colada..."
+  },
+  {
+   "id": "03",
+   "who": "e",
+   "text": "Ayer mi madre estuvo dos horas mirando el móvil."
+  },
+  {
+   "id": "04",
+   "who": "r",
+   "text": "Eso no cuenta. Estaba descansando."
+  },
+  {
+   "id": "05",
+   "who": "e",
+   "text": "¿Descansando de qué?"
+  },
+  {
+   "id": "06",
+   "who": "r",
+   "text": "De no tener tiempo."
+  },
+  {
+   "id": "07",
+   "who": "e",
+   "text": "Entonces, si dejara el móvil..."
+  },
+  {
+   "id": "08",
+   "who": "r",
+   "text": "Tendría dos horas más."
+  },
+  {
+   "id": "09",
+   "who": "e",
+   "text": "¡Y podría descansar de verdad!"
+  },
+  {
+   "id": "10",
+   "who": "r",
+   "text": "Ya. Pero no tiene tiempo para dejar el móvil."
+  }
+ ]
+}

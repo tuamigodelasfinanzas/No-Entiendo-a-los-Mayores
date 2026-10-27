@@ -662,6 +662,19 @@ def icon(kind, size):
         pts = [(c - s * 0.18, c + s * 0.12), (c - s * 0.05, c + s * 0.04), (c + s * 0.05, c + s * 0.08), (c + s * 0.2, c - s * 0.16)]
         d.line(pts, fill=(31, 160, 90, 255), width=int(s * 0.04), joint='curve')
         d.polygon([(c + s * 0.25, c - s * 0.23), (c + s * 0.12, c - s * 0.19), (c + s * 0.22, c - s * 0.08)], fill=(31, 160, 90, 255))
+    elif kind == 'movil':
+        d.rounded_rectangle((c - s * 0.15, c - s * 0.27, c + s * 0.15, c + s * 0.27), radius=s * 0.05, fill=(50, 50, 60, 255), outline=ink, width=int(s * 0.02))
+        d.rounded_rectangle((c - s * 0.12, c - s * 0.21, c + s * 0.12, c + s * 0.19), radius=s * 0.02, fill=(120, 190, 255, 255))
+        for i, col in enumerate(((255, 120, 120), (255, 210, 90), (120, 220, 150), (200, 150, 255))):
+            x, y = c - s * 0.06 + (i % 2) * s * 0.12, c - s * 0.11 + (i // 2) * s * 0.12
+            d.rounded_rectangle((x - s * 0.04, y - s * 0.04, x + s * 0.04, y + s * 0.04), radius=s * 0.015, fill=col + (255,))
+        d.ellipse((c - s * 0.02, c + s * 0.21, c + s * 0.02, c + s * 0.25), fill=(200, 200, 210, 255))
+    elif kind == 'reloj':
+        r = s * 0.26
+        d.ellipse((c - r, c - r, c + r, c + r), fill=(255, 250, 235, 255), outline=ink, width=int(s * 0.025))
+        d.line((c, c, c, c - r * 0.7), fill=ink, width=int(s * 0.03))
+        d.line((c, c, c + r * 0.5, c + r * 0.2), fill=(215, 50, 46, 255), width=int(s * 0.03))
+        d.ellipse((c - s * 0.025, c - s * 0.025, c + s * 0.025, c + s * 0.025), fill=ink)
     elif kind == 'banco':
         d.polygon([(c - s * 0.28, c - s * 0.08), (c, c - s * 0.26), (c + s * 0.28, c - s * 0.08)], fill=(200, 200, 210, 255), outline=ink)
         for x in (-0.18, -0.06, 0.06, 0.18):

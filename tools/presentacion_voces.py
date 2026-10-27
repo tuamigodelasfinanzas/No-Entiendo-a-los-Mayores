@@ -2,12 +2,13 @@
 and the other versions tried, to compare, in voces-pruebas/<version>/. Same voices as src/voice.mjs (edge-tts, silence
 trimmed at both ends); the main version no longer has the pitch / formant child processing.
 Usage: python3 tools/presentacion_voces.py [especial]   (needs edge-tts and ffmpeg; runs in .github/workflows/presentacion-voces.yml)
-  especial: a folder of content/especiales (default presentacion); other than the intro, only the main version"""
+  especial: a folder of content/especiales (default presentacion), or a path such as content/voces/<episode>;
+  other than the intro, only the main version"""
 import json, os, subprocess, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SPECIAL = sys.argv[1] if len(sys.argv) > 1 else 'presentacion'
-DIR = os.path.join(ROOT, 'content/especiales', SPECIAL)
+DIR = os.path.join(ROOT, SPECIAL) if '/' in SPECIAL else os.path.join(ROOT, 'content/especiales', SPECIAL)
 # kid: 1 = no pitch / formant processing afterwards. Chiño found the Rubber Band child voice metallic (2026-10-27):
 # the voices now stay as the service speaks them, made a little younger only with its own pitch and rate
 VARIANTS = {
