@@ -1,0 +1,42 @@
+name: Telegram test
+
+# By hand (Actions > Telegram test > Run workflow): checks the Telegram bot of this channel.
+#   - Only TELEGRAM_BOT_TOKEN set: lists the chats that wrote to the bot, to copy the right one into TELEGRAM_CHAT_ID
+#     (send any message to the bot first, or add it to the group and write there).
+#   - Both secrets set: sends a test message, so the previews and the health check will arrive there.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  telegram:
+    runs-on: ubuntu-latest
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+    steps:
+      - name: Check the bot
+        run: |
+          set -uo pipefail
+          [ -n "$TELEGRAM_BOT_TOKEN" ] || { echo "::error::Falta el secreto TELEGRAM_BOT_TOKEN (el token que da @BotFather)"; exit 1; }
+          ME=$(curl -sS "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/getMe")
+          [ "$(echo "$ME" | jq -r .ok)" = true ] || { echo "::error::Telegram no acepta el token: $(echo "$ME" | jq -r .description)"; exit 1; }
+          echo "::notice::Bot: @$(echo "$ME" | jq -r .result.username)"
+          if [ -z "$TELEGRAM_CHAT_ID" ]; then
+            CHATS=$(curl -sS "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/getUpdates" \
+              | jq -r '[.result[] | (.message // .channel_post // .my_chat_member // .edited_message) | .chat | select(.)] | unique_by(.id)[] | "\(.id) = \(.title // ((.first_name // "") + " " + (.last_name // ""))) (\(.type))"')
+            if [ -z "$CHATS" ]; then
+              echo "::error::Falta TELEGRAM_CHAT_ID y el bot no tiene mensajes. Escríbele algo al bot (o en el grupo donde esté) y vuelve a lanzar esto."
+            else
+              while read -r c; do echo "::notice::Chat encontrado: $c"; done <<< "$CHATS"
+              echo "::error::Copia el número del chat que quieras en el secreto TELEGRAM_CHAT_ID y vuelve a lanzar esto."
+            fi
+            exit 1
+          fi
+          R=$(curl -sS -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
+            --data-urlencode "chat_id=$TELEGRAM_CHAT_ID" \
+            --data-urlencode "text=🧒 No Entiendo a los Mayores · prueba: a partir de ahora aquí llegan los vídeos (para TikTok) y el aviso de salud de cada mañana.")
+          [ "$(echo "$R" | jq -r .ok)" = true ] || { echo "::error::No se pudo enviar al chat $TELEGRAM_CHAT_ID: $(echo "$R" | jq -r .description)"; exit 1; }
+          echo "::notice::Mensaje de prueba enviado"
