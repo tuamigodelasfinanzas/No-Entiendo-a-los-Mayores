@@ -1,0 +1,67 @@
+{
+ "id": "002-no-tengo-tiempo",
+ "total": 28.39,
+ "voice": true,
+ "lines": [
+  {
+   "who": "e",
+   "start": 0.25,
+   "dur": 2.33,
+   "text": "¿Por qué los mayores dicen que no tienen tiempo?"
+  },
+  {
+   "who": "r",
+   "start": 2.86,
+   "dur": 3,
+   "text": "Porque trabajan, hacen la compra, la cena, la colada..."
+  },
+  {
+   "who": "e",
+   "start": 6.14,
+   "dur": 2.69,
+   "text": "Ayer mi madre estuvo dos horas mirando el móvil."
+  },
+  {
+   "who": "r",
+   "start": 9.11,
+   "dur": 3.38,
+   "text": "Eso no cuenta. Estaba descansando."
+  },
+  {
+   "who": "e",
+   "start": 12.77,
+   "dur": 1.25,
+   "text": "¿Descansando de qué?"
+  },
+  {
+   "who": "r",
+   "start": 14.3,
+   "dur": 1.37,
+   "text": "De no tener tiempo."
+  },
+  {
+   "who": "e",
+   "start": 15.95,
+   "dur": 2.04,
+   "text": "Entonces, si dejara el móvil..."
+  },
+  {
+   "who": "r",
+   "start": 18.27,
+   "dur": 1.68,
+   "text": "Tendría dos horas más."
+  },
+  {
+   "who": "e",
+   "start": 20.23,
+   "dur": 1.73,
+   "text": "¡Y podría descansar de verdad!"
+  },
+  {
+   "who": "r",
+   "start": 22.23,
+   "dur": 3.53,
+   "text": "Ya. Pero no tiene tiempo para dejar el móvil."
+  }
+ ]
+}
