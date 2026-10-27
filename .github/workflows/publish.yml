@@ -139,8 +139,7 @@ jobs:
           mkdir -p out
           run python3 tools/episodio.py lineas "$ID"
           run python3 tools/presentacion_voces.py "content/voces/$ID"
-          # FONDO=liso until Chiño approves the theme backgrounds (tools/fondos.py)
-          FONDO=liso run python3 tools/episodio.py "$ID" out/short.mp4
+          run python3 tools/episodio.py "$ID" out/short.mp4
           node -e "import('./src/post.mjs').then(m => { const fs = require('fs'); const p = m.post(JSON.parse(fs.readFileSync(process.argv[1], 'utf8'))); p.cover_ms = 600; fs.writeFileSync('out/post.json', JSON.stringify(p, null, 1)); })" "${{ steps.what.outputs.file }}"
           ffmpeg -y -v error -ss 0.6 -i out/short.mp4 -frames:v 1 -q:v 3 out/cover.jpg
           ffprobe -v error -show_entries format=duration -of json out/short.mp4 > out/timing.json
