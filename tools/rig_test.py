@@ -71,6 +71,13 @@ for _sd in ('l', 'r'):
     REST['up_' + _sd] = math.degrees(ang(J['elbow_' + _sd] - J['shoulder_' + _sd]))
     REST['arm_' + _sd] = math.degrees(ang(J['wrist_' + _sd] - J['shoulder_' + _sd]))
     REST['fore_' + _sd] = math.degrees(ang(J['wrist_' + _sd] - J['elbow_' + _sd]))
+SLEEVES = meta.get('sleeves')                   # one straight sleeve per side, bent along a curve (split_sleeves.py)
+if SLEEVES:
+    from split_sleeves import sample
+    STRIP = {sd: np.asarray(Image.open(os.path.join(PARTS, f'sleeve_{sd}.png')).convert('RGBA'), float)
+             for sd in SLEEVES}
+    for _sd in STRIP:                           # premultiplied, so resampling doesn't darken the edge
+        STRIP[_sd][..., :3] *= STRIP[_sd][..., 3:] / 255
 ONE_PIECE = 'upperarm_l' not in meta['pieces']   # pose A rig without layered sleeves: a straight arm in one piece
 
 
@@ -95,6 +102,71 @@ def arm(side, Mt, S, tilt, up_out, fore_out, hand, hand_rot=0.0):
     h = HANDS[f'{hand}_{side}']
     Mh = T(*Ww) @ R(th_f - math.radians(h['dir']) + sgn * math.radians(hand_rot)) @ Sc(S) @ T(*[-v for v in h['wrist']])
     return Mu, Mf, Mh
+
+
+def hermite(p0, p1, m0, m1, n):
+    u = np.linspace(0, 1, n)[:, None]
+    return ((2 * u ** 3 - 3 * u ** 2 + 1) * p0 + (u ** 3 - 2 * u ** 2 + u) * m0 + (-2 * u ** 3 + 3 * u ** 2) * p1
+            + (u ** 3 - u ** 2) * m1)
+
+
+def unit(v):
+    return v / max(np.linalg.norm(v), 1e-6)
+
+
+def draw_sleeve(frame, side, Sw, Ew, Ww, t_sh, S, fade=None, mask=None):
+    """Bends the straight sleeve along a smooth curve: it leaves the shoulder along t_sh (between hanging and the upper
+    arm, so the shoulder rounds off like a real one), goes round the elbow and comes out along the forearm."""
+    g, im = SLEEVES[side], STRIP[side]
+    tf = unit(Ww - Ew)
+    te = unit(unit(Ew - Sw) + tf)
+    lu, lf = np.linalg.norm(Ew - Sw), np.linalg.norm(Ww - Ew)
+    a = Sw - t_sh * g['cap'] * S * 1.2
+    seg = [np.linspace(a, Sw, 12)[:-1],
+           hermite(Sw, Ew, t_sh * lu, te * lu * 0.9, 50)[:-1],
+           hermite(Ew, Ww, te * lf * 0.9, tf * lf, 50)[:-1],
+           np.linspace(Ww, Ww + tf * (g['cuff'] + 6) * S, 8)]
+    C = np.concatenate(seg)
+    marks = np.cumsum([0] + [len(x) for x in seg[:-1]])           # sample index of shoulder, elbow, wrist
+    ds = np.linalg.norm(np.diff(C, axis=0), axis=1)
+    arc = np.concatenate([[0], np.cumsum(ds)])
+    Tn = np.gradient(C, axis=0)
+    Tn /= np.maximum(np.linalg.norm(Tn, axis=1, keepdims=True), 1e-6)
+    # arc length -> row of the straight sleeve, joint by joint
+    s_keys = [arc[0], arc[marks[1]], arc[marks[2]], arc[marks[3]], arc[-1]]
+    v_keys = [-g['cap'] * 1.2, 0, g['upper'], g['upper'] + g['fore'], g['upper'] + g['fore'] + g['cuff'] + 6]
+    pad = g['half'] * S + 3
+    x0, y0 = np.floor(C.min(0) - pad).astype(int)
+    x1, y1 = np.ceil(C.max(0) + pad).astype(int)
+    x0, y0, x1, y1 = max(x0, 0), max(y0, 0), min(x1, W), min(y1, H)
+    if x1 <= x0 or y1 <= y0:
+        return
+    yy, xx = np.mgrid[y0:y1, x0:x1]
+    P = np.stack([xx.ravel(), yy.ravel()], 1).astype(float)
+    best = np.zeros(len(P), int)
+    bd = np.full(len(P), np.inf)
+    for i in range(0, len(C), 32):                               # nearest curve sample, in chunks
+        dd = ((P[:, None, :] - C[None, i:i + 32]) ** 2).sum(2)
+        k = dd.argmin(1)
+        m = dd[np.arange(len(P)), k] < bd
+        bd[m], best[m] = dd[np.arange(len(P)), k][m], k[m] + i
+    dv = P - C[best]
+    t = Tn[best]
+    along = arc[best] + (dv * t).sum(1)
+    across = dv[:, 0] * t[:, 1] - dv[:, 1] * t[:, 0]
+    v = np.interp(along, s_keys, v_keys, left=-1e4, right=1e4)
+    k = g['k']
+    rows = ((v + g['cap']) * k).reshape(yy.shape)
+    cols = ((across / S + g['half']) * k).reshape(yy.shape)
+    px = sample(im, rows, cols)
+    if fade:                                    # over the torso: the top of the sleeve melts into the shoulder
+        px *= np.clip((v.reshape(yy.shape) - fade[0]) / (fade[1] - fade[0]), 0, 1)[..., None]
+    if mask is not None:                        # only where mask (the torso) is: elsewhere the sleeve below shows
+        px *= mask[y0:y1, x0:x1, None] / 255
+    al = px[..., 3:]
+    px[..., :3] = np.where(al > 0, px[..., :3] * 255 / np.maximum(al, 1), 0)
+    tile = Image.fromarray(np.clip(px, 0, 255).astype(np.uint8), 'RGBA')
+    frame.alpha_composite(tile, (int(x0), int(y0)))
 
 
 def leg(side, Mt, A, S, lift):
@@ -127,6 +199,9 @@ def leg(side, Mt, A, S, lift):
 
 
 # arm poses: side -> (upper arm out, forearm out, hand, hand turn); None = hands in the pockets (the drawing as is)
+SHOULDER_FOLLOW = 0.35      # how much the sleeve leaves the shoulder still pointing down (round shoulder)
+FOREARM_LAG = 0.08          # s
+SHOULDER_FADE = (-6, 34)    # sleeve rows (from the shoulder joint) over which it fades into the torso
 DOWN = {'l': (12, 8, REST_HAND, 0), 'r': (12, 8, REST_HAND, 0)}
 ARM_KEYS = [  # (time, pose); between keys the angles ease, the hand changes half way
     (0.0, DOWN), (3.4, DOWN),
@@ -163,6 +238,10 @@ def pose(t):
     p = {'tilt': 0.0, 'head': 0.0, 'lift': [0.0, 0.0], 'air': [0.0, 0.0], 'drop': 0.0, 'dx': 0.0, 'blink': False,
          'spread': 0.0}
     p['arms'] = {k: list(v) for k, v in arms_at(t).items()}
+    late = arms_at(max(t - FOREARM_LAG, 0))          # the forearm and the hand trail the upper arm a little
+    for sd in ('l', 'r'):
+        p['arms'][sd][1] = late[sd][1]
+        p['arms'][sd][2] = late[sd][2]
     # walk towards the camera: 0 .. 3.4 s, steps of 0.5 s; the arms swing a little
     walk_end = 3.4
     k = ease(min(t / walk_end, 1))
@@ -266,14 +345,31 @@ def frame_at(t, debug=False):
         draw(img, 'shin_' + side, legs[side][1])
     for side in ('l', 'r'):
         draw(img, 'thigh_' + side, legs[side][0])
+    sleeves_later = []
     if not ONE_PIECE:                               # layered sleeves go behind the torso's round shoulder
         for side in ('l', 'r'):
             up, fore, hand, rot = p['arms'][side]
             Mu, Mf, Mhd = arm(side, Mt, S, p['tilt'], up, fore, hand, rot)
             draw(img, f'hand_{hand}_{side}', Mhd)
+            if SLEEVES:
+                Sw, Ew = ap(Mu, J['shoulder_' + side]), ap(Mu, J['elbow_' + side])
+                Ww = ap(Mf, J['wrist_' + side])
+                sgn = 1 if side == 'l' else -1
+                th_u = math.radians(90 + sgn * up) + p['tilt']
+                th_s = th_u - SHOULDER_FOLLOW * (th_u - (math.pi / 2 + p['tilt']))
+                t_sh = np.array([math.cos(th_s), math.sin(th_s)])
+                draw_sleeve(img, side, Sw, Ew, Ww, t_sh, S)
+                sleeves_later.append((side, Sw, Ew, Ww, t_sh))
+                continue
             draw(img, 'forearm_' + side, Mf)
             draw(img, 'upperarm_' + side, Mu)
-    draw(img, TORSO_FREE if p['arms'] else 'torso', Mt)
+    torso = Image.new('RGBA', (W, H))
+    draw(torso, TORSO_FREE if p['arms'] else 'torso', Mt)
+    img.alpha_composite(torso)
+    if sleeves_later:                               # then over the torso, fading into its round shoulder
+        tmask = np.asarray(torso)[..., 3].astype(float)
+        for side, Sw, Ew, Ww, t_sh in sleeves_later:
+            draw_sleeve(img, side, Sw, Ew, Ww, t_sh, S, fade=SHOULDER_FADE, mask=tmask)
     if p['arms'] and ONE_PIECE:
         for side in ('l', 'r'):
             up, fore, hand, rot = p['arms'][side]

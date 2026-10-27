@@ -6,7 +6,11 @@ Source: assets/characters/source/e-mangas.png, four capsule-shaped sleeves on wh
 forearm of the arm on the left of the screen, then the same for the other one. Each piece is cut out, its red is
 brought to the red of pose A, and it is fitted (width and length separately) between its two joints of rig.json,
 already turned to the rest pose: the upper arm's round ends are centred on the shoulder and the elbow, the forearm's
-round end on the elbow and its cuff ends just past the wrist, where the hand goes in."""
+round end on the elbow and its cuff ends just past the wrist, where the hand goes in.
+
+It also joins both into one straight sleeve per side, sleeve_{l,r}.png (2x, axis down the middle, the shoulder's centre
+at row CAP*2): tools/rig_test.py bends it along a curve through shoulder, elbow and wrist, so the elbow and the
+shoulder bend round instead of turning two stiff pieces."""
 import json, math, os
 import numpy as np
 from PIL import Image, ImageFilter
@@ -86,13 +90,56 @@ def fit(c, a, width, top, bottom, pad_top, pad_bottom):
     return Image.fromarray(np.clip(out, 0, 255).astype(np.uint8), 'RGBA'), (int(x0), int(y0))
 
 
-def outline(rgba):
+def outline(rgba, size=5):
     """Redraws the outline at pose A's weight: shrunk to the rig's size the generated line breaks into dots."""
     a = Image.fromarray(rgba[..., 3].astype(np.uint8))
-    inner = np.asarray(a.filter(ImageFilter.MinFilter(5)), float) / 255
+    inner = np.asarray(a.filter(ImageFilter.MinFilter(size)), float) / 255
     band = np.clip(rgba[..., 3] / 255 - inner, 0, 1)[..., None]
     rgba[..., :3] = rgba[..., :3] * (1 - band) + HOODIE_LINE * band
     return rgba
+
+
+STRIP_K = 2                            # straight sleeve: pixels per frame pixel
+STRIP_HALF = 50                        # half its width, frame px
+
+
+def sample(img, r, c):
+    """Bilinear lookup of img (H x W x C) at float rows r / cols c (same shape); outside the image is 0."""
+    h, w = img.shape[:2]
+    r0, c0 = np.floor(r).astype(int), np.floor(c).astype(int)
+    fr, fc = (r - r0)[..., None], (c - c0)[..., None]
+    out = 0
+    for dr, dc, wt in ((0, 0, (1 - fr) * (1 - fc)), (1, 0, fr * (1 - fc)), (0, 1, (1 - fr) * fc), (1, 1, fr * fc)):
+        rr, cc = r0 + dr, c0 + dc
+        ok = ((rr >= 0) & (rr < h) & (cc >= 0) & (cc < w))[..., None]
+        out = out + img[np.clip(rr, 0, h - 1), np.clip(cc, 0, w - 1)] * ok * wt
+    return out
+
+
+def premul(c, a):
+    return np.dstack([c * a[..., None], a * 255])
+
+
+def straight(up, fore, lu, lf):
+    """One straight sleeve: the upper arm down to the elbow, then the forearm, cross-faded over the elbow and with the
+    width easing from one to the other, so nothing in it marks a joint."""
+    (cu, au), (cf, af) = up, fore
+    U, F = premul(cu, au), premul(cf, af)
+    cap = UPPER_W / 2
+    v = np.arange(-cap, lu + lf + CUFF_PAST_WRIST, 1 / STRIP_K)[:, None]
+    d = np.arange(-STRIP_HALF, STRIP_HALF, 1 / STRIP_K)[None, :]
+    width = UPPER_W + (FORE_W - UPPER_W) * np.clip((v - lu * 0.5) / (lu * 0.5 + lf * 0.5), 0, 1)
+    hu, wu = au.shape
+    hf, wf = af.shape
+    rows_u = (v + cap) * hu / (lu + cap + UPPER_W / 2) + 0 * d
+    cols_u = wu / 2 + d / width * wu
+    rows_f = (v - lu + FORE_W / 2) * hf / (lf + FORE_W / 2 + CUFF_PAST_WRIST) + 0 * d
+    cols_f = wf / 2 + d / width * wf
+    k = np.clip((v - (lu - 14)) / 28, 0, 1)[..., None]
+    out = sample(U, rows_u, cols_u) * (1 - k) + sample(F, rows_f, cols_f) * k
+    al = out[..., 3:]
+    out[..., :3] = np.where(al > 0, out[..., :3] * 255 / np.maximum(al, 1), 0)
+    return outline(out, 2 * STRIP_K + 1)
 
 
 def main():
@@ -113,6 +160,11 @@ def main():
         im, off = fit(recolour(cf, med), af, FORE_W, E, Wr, FORE_W / 2, CUFF_PAST_WRIST)
         im.save(os.path.join(OUT, f'forearm_{side}.png'))
         meta['pieces'][f'forearm_{side}'] = {'x': off[0], 'y': off[1]}
+        lu, lf = float(np.linalg.norm(E - S)), float(np.linalg.norm(Wr - E))
+        im = straight((recolour(cu, med), au), (recolour(cf, med), af), lu, lf)
+        Image.fromarray(np.clip(im, 0, 255).astype(np.uint8), 'RGBA').save(os.path.join(OUT, f'sleeve_{side}.png'))
+        meta.setdefault('sleeves', {})[side] = {'k': STRIP_K, 'half': STRIP_HALF, 'cap': UPPER_W / 2, 'upper': lu,
+                                                'fore': lf, 'cuff': CUFF_PAST_WRIST}
     json.dump(meta, open(os.path.join(OUT, 'rig.json'), 'w'), indent=1)
 
 
