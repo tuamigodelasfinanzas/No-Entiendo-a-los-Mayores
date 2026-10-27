@@ -40,7 +40,7 @@ def load(c):
 K = {'e': load('e'), 'r': load('r')}
 # mouth of the original drawings (tools/prepare_characters.py RIGS[...]['jaw']), in rig coordinates
 MOUTH = {'e': {'y': 406, 'd': 8, 'ox': 456.5, 'ow': 29, 'inside': (74, 14, 8)},
-         'r': {'y': 363, 'd': 7, 'ox': 454.5, 'ow': 27, 'inside': (90, 26, 16)}}
+         'r': {'y': 363, 'd': 7, 'ox': 443.5, 'ow': 27, 'inside': (90, 26, 16)}}
 T, Rm, Sc, ap, ease = K['e'].T, K['e'].R, K['e'].Sc, K['e'].ap, K['e'].ease
 
 

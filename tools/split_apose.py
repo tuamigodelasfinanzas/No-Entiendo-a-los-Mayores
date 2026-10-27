@@ -34,6 +34,7 @@ PANTS_SEEDS = [(345, 1020), (530, 1020), (330, 1040), (545, 1040)]
 HOOD_TOP = 300
 SKIN_R, SKIN_G = 170, 105             # hand sheet: what counts as skin (R's fist has darker shading)
 HAND_JOIN = 0                          # px: bridge the creases that split a hand into islands (R's fist)
+HEAD_DX = 0                            # px: moves the original head (and its neck pivot) sideways onto the body
 
 
 def hood_colour(r, g, b):
@@ -269,12 +270,13 @@ def main():
     hd[hd[..., 3] == 0] = 0
     x0, y0, x1, y1 = Image.fromarray(hd).getbbox()
     Image.fromarray(hd[y0:y1, x0:x1]).save(os.path.join(OUT, 'head.png'), optimize=True)
-    meta['pieces']['head'] = {'x': x0, 'y': y0}
+    meta['pieces']['head'] = {'x': x0 + HEAD_DX, 'y': y0}
     for name in ('blink', 'jaw'):
         im = Image.open(os.path.join(E, name + '.png'))
         x0, y0, x1, y1 = im.getbbox()
         im.crop((x0, y0, x1, y1)).save(os.path.join(OUT, name + '.png'), optimize=True)
-        meta['pieces'][name] = {'x': x0, 'y': y0}
+        meta['pieces'][name] = {'x': x0 + HEAD_DX, 'y': y0}
+    meta['joints']['neck'][0] += HEAD_DX
     json.dump(meta, open(os.path.join(OUT, 'rig.json'), 'w'), indent=1)
     print('pieces:', ', '.join(sorted(meta['pieces'])))
 
@@ -310,8 +312,10 @@ R_CFG = dict(
     CROTCH=442, CROTCH_Y=787, SIDE_CUT=(575, 350, 540), CUT_BAND=(460, 740), LEGS=(740, 235, 650),
     SKIN_R=165, SKIN_G=55, HAND_JOIN=4,
     PANTS_SEEDS=[(340, 1020), (535, 1020), (330, 1040), (540, 1040)], HOOD_TOP=280, NECK_CUT=408,
-    JAW=[(260, 386), (345, 386), (360, 379), (380, 398), (410, 414), (450, 421), (490, 415), (520, 401), (548, 383),
-         (565, 381), (650, 381)],
+    # the chin's own outline (27-10-2026): the old line left a strip of neck and hood under the chin, at its sides
+    JAW=[(260, 386), (345, 386), (380, 386), (396, 398), (411, 406), (426, 413), (441, 417), (456, 419), (471, 417),
+         (486, 413), (501, 406), (516, 398), (530, 386), (650, 381)],
+    HEAD_DX=-11,                     # his head sat 11 px right of the hoodie's middle: centred over the body
     hood_colour=lambda r, g, b: (b > 140) & (r < 90) & (b - r > 90),
 )
 if CHAR == 'r':
