@@ -242,7 +242,8 @@ def wrist_info(m, c, hand, side):
 
 def wrist_join(img, Ww, Ph, ah, info, S):
     """Skin between the cuff and the hand, the colour of the hand, so the hand never looks detached: a tapered piece
-    from inside the sleeve (Ww) down into the hand, fading out over the hand so it covers its cut edge."""
+    from inside the sleeve (Ww) to just inside the hand. It goes UNDER the hand and the sleeve, so it only shows in
+    the gap between them and never paints over the hand (Chiño)."""
     skin, edge, half, full = info
     into = (max(full, 0) + 10) * S
     B = Ph + ah * into
@@ -263,7 +264,7 @@ def wrist_join(img, Ww, Ph, ah, info, S):
     dx, dy = xx - Ww[0], yy - Ww[1]
     along = dx * u[0] + dy * u[1]
     across = np.abs(dx * n[0] + dy * n[1])
-    r = half * S * (1.0 - 0.06 * np.clip(along / L, 0, 1))
+    r = half * S * 0.9 * (1.0 - 0.06 * np.clip(along / L, 0, 1))
     al = np.clip(r - across + 0.5, 0, 1) * (along >= 0) * np.clip((L - along) / (12 * S), 0, 1)
     k = np.clip((across - (r - 2.4 * S)) / (2.4 * S), 0, 1)[..., None]     # thin darker edge, like the drawing's
     shade = 1 - 0.07 * (across / np.maximum(r, 1))[..., None] ** 2          # a little rounder in the middle
@@ -325,8 +326,8 @@ def kid(img, c, x, floor, S, p):
         WRISTS.append(Ph)
     for side, (hand, Mhd, sl, where) in arms.items():
         if where != 'front':
-            m.draw(img, f'hand_{hand.rstrip("~")}_{side}', Mhd)
             wrist_join(img, *joins[side], S)
+            m.draw(img, f'hand_{hand.rstrip("~")}_{side}', Mhd)
             paste_sleeve(img, sl)
     torso = Image.new('RGBA', (W, H))
     m.draw(torso, 'torso', Mt)
@@ -341,8 +342,8 @@ def kid(img, c, x, floor, S, p):
         m.draw(img, 'blink', Mh)
     for side, (hand, Mhd, sl, where) in arms.items():
         if where == 'front':                    # a hand in front of the face (on the chin)
-            m.draw(img, f'hand_{hand.rstrip("~")}_{side}', Mhd)
             wrist_join(img, *joins[side], S)
+            m.draw(img, f'hand_{hand.rstrip("~")}_{side}', Mhd)
             paste_sleeve(img, sl)
             paste_sleeve(img, sl, fade=m.SHOULDER_FADE, mask=tmask)
     return Mh
