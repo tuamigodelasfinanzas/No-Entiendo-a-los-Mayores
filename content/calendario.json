@@ -1,8 +1,43 @@
 {
-  "_doc": "Dos vídeos al día, a la misma hora en Instagram Reels, Facebook y YouTube Shorts (hora de Madrid). Se publican los guiones en orden de id, saltando los que ya salieron (memoria en la rama gh-pages: state/published.json). Mientras 'inicio' sea null, o PUBLICAR no sea 'si' (variable del repo o el campo 'publicar' de este archivo), el workflow solo genera previews y no publica nada. Por qué estas horas: docs/calendario.md.",
+  "_doc": "Dos vídeos al día, a la misma hora en Instagram Reels, Facebook y YouTube Shorts (hora de Madrid). Se publican los guiones en el orden de 'orden' (pensado para que nunca vayan seguidos dos de la misma serie o del mismo pilar; los guiones que no estén en la lista van detrás, por id), saltando los que ya salieron (memoria en la rama gh-pages: state/published.json). Mientras 'inicio' sea null, o PUBLICAR no sea 'si' (variable del repo o el campo 'publicar' de este archivo), el workflow solo genera previews y no publica nada. Por qué estas horas: docs/calendario.md.",
   "zona": "Europe/Madrid",
-  "franjas": { "A": "13:30", "B": "20:30" },
-  "inicio": "2026-10-26",
-  "publicar": "no",
-  "idioma": "es"
+  "franjas": {
+    "A": "13:30",
+    "B": "20:30"
+  },
+  "inicio": "2026-10-28",
+  "publicar": "si",
+  "idioma": "es",
+  "orden": [
+    "001-hipoteca",
+    "002-no-tengo-tiempo",
+    "003-reuniones",
+    "004-bruto-y-neto",
+    "006-tenemos-que-quedar",
+    "005-inflacion",
+    "007-gimnasio",
+    "008-cookies",
+    "009-los-lunes",
+    "010-comprar-casa",
+    "011-tarjeta-de-credito",
+    "012-entrevista",
+    "013-ofertas",
+    "015-contrasenas",
+    "014-comision",
+    "016-vacaciones",
+    "017-la-nube",
+    "018-seguro",
+    "019-jubilacion",
+    "020-grupo-de-padres",
+    "021-cafe",
+    "022-parking",
+    "023-bizum",
+    "024-networking",
+    "025-plataformas",
+    "026-mi-coche",
+    "027-actualizaciones",
+    "028-pension",
+    "030-suscripciones",
+    "029-impuestos"
+  ]
 }

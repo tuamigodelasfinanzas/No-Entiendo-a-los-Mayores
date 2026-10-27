@@ -1,6 +1,6 @@
 // What goes out now. Prints JSON: { id, file, slot, date, at (UTC ISO of the slot today), reason } or { skip: reason }.
 // Usage: node src/plan.mjs <site/state/published.json> [slot A|B] [force: script id]
-// Without a slot it takes the next slot of today (Madrid time). Scripts go out in id order, skipping the ones
+// Without a slot it takes the next slot of today (Madrid time). Scripts go out in calendario.orden, skipping the ones
 // already published; content/calendario.json has the times and the start date (null = not started).
 import fs from 'node:fs';
 import path from 'node:path';
@@ -30,7 +30,9 @@ const out = obj => { process.stdout.write(JSON.stringify(obj)); process.exit(0);
 if (!slot || !cal.franjas[slot]) out({ skip: `no slot left today (now ${hm})` });
 
 const dir = path.join(ROOT, 'content/guiones', cal.idioma || 'es');
-const all = fs.readdirSync(dir).filter(f => f.endsWith('.json')).sort();
+// in the order of calendario.orden (never two of the same series or pillar in a row); the rest after it, by id
+const rank = f => { const i = (cal.orden || []).indexOf(path.basename(f, '.json')); return i < 0 ? 1e6 : i; };
+const all = fs.readdirSync(dir).filter(f => f.endsWith('.json')).sort().sort((a, b) => rank(a) - rank(b));
 let file;
 if (force) {
   file = all.find(f => f === `${force}.json` || f.startsWith(`${force}-`));

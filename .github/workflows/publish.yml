@@ -35,6 +35,10 @@ on:
         description: "true = do not wait for the slot time"
         required: false
         default: "false"
+      media:
+        description: "Optional: publish a video that is already on GitHub Pages (media/<dir> with short.mp4, cover.jpg, post.json), without rendering. Needs dry_run = false"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -75,6 +79,8 @@ jobs:
           # the switch: repo variable PUBLICAR, or "publicar": "si" in content/calendario.json
           PUB="${{ vars.PUBLICAR }}"; [ "$PUB" = si ] || PUB=$(jq -r '.publicar // ""' content/calendario.json)
           if [ "$PUB" = si ] && { [ "${{ github.event_name }}" = schedule ] || [ "${{ inputs.dry_run }}" = false ]; }; then DRY=false; fi
+          # a ready video by hand (inputs.media) is an explicit order: dry_run = false publishes it even while paused
+          if [ -n "${{ inputs.media }}" ] && [ "${{ inputs.dry_run }}" = false ]; then DRY=false; fi
           echo "slot=$SLOT" >> "$GITHUB_OUTPUT"; echo "dry=$DRY" >> "$GITHUB_OUTPUT"
           echo "::notice::Slot $SLOT · $([ $DRY = true ] && echo 'DRY RUN (no se publica)' || echo 'PUBLICA')"
 
@@ -94,6 +100,13 @@ jobs:
         if: steps.mode.outputs.skip != 'true'
         id: what
         run: |
+          if [ -n "${{ inputs.media }}" ]; then
+            M="${{ inputs.media }}"; [ -f "site/media/$M/short.mp4" ] && [ -f "site/media/$M/post.json" ] || { echo "::error::site/media/$M has no short.mp4 / post.json"; exit 1; }
+            ID=$(jq -r .id "site/media/$M/post.json")
+            { echo "id=$ID"; echo "date=$(TZ=Europe/Madrid date +%F)"; echo "left=99"; echo "media=$M"; } >> "$GITHUB_OUTPUT"
+            mkdir -p out && cp "site/media/$M/post.json" out/post.json
+            exit 0
+          fi
           P=$(node src/plan.mjs site/state/published.json "${{ steps.mode.outputs.slot }}" "${{ inputs.guion }}")
           echo "$P"
           if echo "$P" | jq -e .skip >/dev/null; then echo "::notice::$(echo "$P" | jq -r .skip)"; echo "skip=true" >> "$GITHUB_OUTPUT"; exit 0; fi
@@ -105,20 +118,31 @@ jobs:
           node-version: 22
 
       - name: Install
-        if: steps.mode.outputs.skip != 'true' && steps.what.outputs.skip != 'true'
+        if: steps.mode.outputs.skip != 'true' && steps.what.outputs.skip != 'true' && inputs.media == ''
         run: |
           npm install --no-audit --no-fund
           npx playwright install --with-deps chromium
           sudo apt-get install -y -qq ffmpeg >/dev/null
-          pip install -q edge-tts numpy
+          pip install -q edge-tts numpy scipy pillow fonttools brotli
 
       - name: Validate and render
-        if: steps.mode.outputs.skip != 'true' && steps.what.outputs.skip != 'true'
+        if: steps.mode.outputs.skip != 'true' && steps.what.outputs.skip != 'true' && inputs.media == ''
         id: render
         run: |
           set -euo pipefail
-          node tools/validate.mjs "${{ steps.what.outputs.file }}"
-          node src/render.mjs "${{ steps.what.outputs.file }}" out
+          # each command's last lines go into an annotation when it fails (readable without the full log)
+          run() { "$@" > step.log 2>&1 || { tail -n 30 step.log; echo "::error::$1 failed: $(tail -c 1500 step.log | tr '\n' ' ')"; exit 1; }; cat step.log; }
+          run node tools/validate.mjs "${{ steps.what.outputs.file }}"
+          # the v7 model that Chiño approved (tools/episodio.py, the rig of the intro Short): voices of the script,
+          # then the video; the text of the post and the cover as before
+          ID="${{ steps.what.outputs.id }}"
+          mkdir -p out
+          run python3 tools/episodio.py lineas "$ID"
+          run python3 tools/presentacion_voces.py "content/voces/$ID"
+          run python3 tools/episodio.py "$ID" out/short.mp4
+          node -e "import('./src/post.mjs').then(m => { const fs = require('fs'); const p = m.post(JSON.parse(fs.readFileSync(process.argv[1], 'utf8'))); p.cover_ms = 600; fs.writeFileSync('out/post.json', JSON.stringify(p, null, 1)); })" "${{ steps.what.outputs.file }}"
+          ffmpeg -y -v error -ss 0.6 -i out/short.mp4 -frames:v 1 -q:v 3 out/cover.jpg
+          ffprobe -v error -show_entries format=duration -of json out/short.mp4 > out/timing.json
           DIR="${{ steps.what.outputs.date }}-${{ steps.mode.outputs.slot }}-${{ steps.what.outputs.id }}"
           [ "${{ steps.mode.outputs.dry }}" = true ] && DIR="preview-$DIR"
           mkdir -p "site/media/$DIR"
@@ -126,7 +150,7 @@ jobs:
           echo "dir=$DIR" >> "$GITHUB_OUTPUT"
 
       - name: Upload media to GitHub Pages
-        if: steps.mode.outputs.skip != 'true' && steps.what.outputs.skip != 'true'
+        if: steps.mode.outputs.skip != 'true' && steps.what.outputs.skip != 'true' && inputs.media == ''
         id: up
         run: |
           set -euo pipefail
@@ -153,6 +177,10 @@ jobs:
           set -euo pipefail
           [ -n "$MAKE_WEBHOOK_URL" ] || { echo "::error::Missing secret MAKE_WEBHOOK_URL"; exit 1; }
           BASE="${{ steps.up.outputs.base }}"
+          if [ -n "${{ inputs.media }}" ]; then
+            BASE="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/media/${{ inputs.media }}"
+            for i in $(seq 1 40); do [ "$(curl -s -o /dev/null -w '%{http_code}' -I "$BASE/short.mp4" || true)" = 200 ] && break; echo "waiting for Pages ($i)"; sleep 15; done
+          fi
           jq -n --arg url "$BASE/short.mp4" --arg cover "$BASE/cover.jpg" --slurpfile p out/post.json \
             '{status:"reel", channel:"noentiendoalosmayores", video_url:$url, cover_url:$cover, cover_ms:$p[0].cover_ms, caption:$p[0].caption, title:$p[0].title}' > reel.json
           jq -n --arg url "$BASE/short.mp4" --slurpfile p out/post.json \
@@ -162,7 +190,7 @@ jobs:
           sleep 20
           curl -sS --fail -X POST -H 'Content-Type: application/json' --data @yt.json "$MAKE_WEBHOOK_URL" || echo "::warning::YouTube payload not accepted by Make"
           # remember it (the next run takes the next script)
-          cd site && jq --arg k "${{ steps.what.outputs.id }}" --arg d "${{ steps.what.outputs.date }}" --arg s "${{ steps.mode.outputs.slot }}" --arg m "${{ steps.render.outputs.dir }}" \
+          cd site && jq --arg k "${{ steps.what.outputs.id }}" --arg d "${{ steps.what.outputs.date }}" --arg s "${{ steps.mode.outputs.slot }}" --arg m "${{ steps.render.outputs.dir }}${{ inputs.media }}" \
             '.[$k] = {date:$d, slot:$s, media:$m}' state/published.json > s.tmp && mv s.tmp state/published.json
           git add -A && git commit -q -m "Published ${{ steps.what.outputs.id }}"
           for i in 1 2 3 4 5; do git push -q origin gh-pages && break || { git pull -q --rebase origin gh-pages; sleep $((i * 3)); }; done
@@ -170,7 +198,7 @@ jobs:
           [ "${{ steps.what.outputs.left }}" -le 6 ] && echo "::warning::Only ${{ steps.what.outputs.left }} scripts left: write more in content/guiones/" || true
 
       - name: Send to Telegram (preview / for TikTok)
-        if: steps.mode.outputs.skip != 'true' && steps.what.outputs.skip != 'true'
+        if: steps.mode.outputs.skip != 'true' && steps.what.outputs.skip != 'true' && inputs.media == ''
         continue-on-error: true
         run: node src/telegram.mjs out "${{ steps.mode.outputs.dry == 'true' && 'PREVIEW, no publicado' || 'publicado' }}"
 
