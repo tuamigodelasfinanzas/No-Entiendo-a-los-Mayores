@@ -1,6 +1,7 @@
 """Layered sleeves for E's rig: upper arm + forearm per side, so the elbow can bend.
-Usage: python3 tools/split_sleeves.py      (after tools/split_apose.py)
-       -> assets/characters/e/rig/upperarm_{l,r}.png, forearm_{l,r}.png, added to rig.json
+Usage: python3 tools/split_sleeves.py [e|r]      (after tools/split_apose.py)
+       -> assets/characters/<e|r>/rig/upperarm_{l,r}.png, forearm_{l,r}.png, sleeve_{l,r}.png, added to rig.json
+R wears the same hoodie in blue: he gets E's sleeves with their shading carried over to his blue.
 
 Source: assets/characters/source/e-mangas.png, four capsule-shaped sleeves on white, left to right: upper arm and
 forearm of the arm on the left of the screen, then the same for the other one. Each piece is cut out, its red is
@@ -11,7 +12,7 @@ round end on the elbow and its cuff ends just past the wrist, where the hand goe
 It also joins both into one straight sleeve per side, sleeve_{l,r}.png (2x, axis down the middle, the shoulder's centre
 at row CAP*2): tools/rig_test.py bends it along a curve through shoulder, elbow and wrist, so the elbow and the
 shoulder bend round instead of turning two stiff pieces."""
-import json, math, os
+import json, math, os, sys
 import numpy as np
 from PIL import Image, ImageFilter
 
@@ -19,9 +20,13 @@ from split_parts import flood, soft
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, 'assets/characters/source/e-mangas.png')
-OUT = os.path.join(ROOT, 'assets/characters/e/rig')
+CHAR = sys.argv[1] if len(sys.argv) > 1 else 'e'
+OUT = os.path.join(ROOT, 'assets/characters', CHAR, 'rig')
 RED_POSE_A = np.array([210, 34, 35.0])
 HOODIE_LINE = np.array([110, 18, 22.0])        # pose A's outline on the hoodie
+BLUE_POSE_A = np.array([6, 137, 246.0])        # R's hoodie
+if CHAR == 'r':
+    HOODIE_LINE = np.array([14, 48, 120.0])
 UPPER_W, FORE_W = 80, 74               # sleeve width in the 896x1200 frame (pose A: ~75 across the elbow)
 CUFF_PAST_WRIST = 14                   # the open cuff goes a bit past the wrist, the hand sits inside it
 SHOULDER_CAP = 24                      # sleeve above the shoulder joint: stays under the torso's round shoulder
@@ -52,6 +57,8 @@ def pieces(rgb):
 
 def recolour(c, ref_med):
     """Brings the generated red to pose A's red; the outline and the dark folds keep their relative shade."""
+    if CHAR == 'r':                     # another colour: keep only how light or dark each pixel of the red is
+        return np.clip(BLUE_POSE_A * (c[..., :1] / ref_med[0]), 0, 255)
     k = RED_POSE_A / ref_med
     return np.clip(c * k, 0, 255)
 

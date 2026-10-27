@@ -1,6 +1,6 @@
 """Rig test: E walks towards the camera, waves, points away and up, shrugs and jumps, moved only by the
 skeleton of tools/split_parts.py.
-Usage: python3 tools/rig_test.py out.mp4 [--debug]      (--debug draws the joints)
+Usage: [CHAR=e|r] RIG=rig python3 tools/rig_test.py out.mp4 [--debug]      (--debug draws the joints)
 
 The legs use two-bone IK: the hip comes from the torso, the ankle from the floor (or the air), and the knee bends
 outwards, like a child seen from the front. A leg that lifts towards the camera gets shorter on screen (the thigh
@@ -11,7 +11,9 @@ from PIL import Image, ImageDraw, ImageFilter
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RIG = os.environ.get('RIG', 'parts')            # parts: first cut (hands in the pockets); rig: from pose A
-PARTS = os.path.join(ROOT, 'assets/characters/e', RIG)
+CHAR = os.environ.get('CHAR', 'e')               # e or r
+PARTS = os.path.join(ROOT, 'assets/characters', CHAR, RIG)
+SOLE = {'e': 1150, 'r': 1151}[CHAR]              # floor line of the drawing (the shoe sits a little into it)
 W, H, FPS = 1080, 1920, 30
 DUR = 14.0
 
@@ -319,7 +321,7 @@ def frame_at(t, debug=False):
     S = p['S']
     floor = 760 + S * 1050                          # further away = higher on screen
     cx = W / 2 + p['dx'] * S
-    ankle_y = floor - (1150 - 1058) * S             # ankle above the sole
+    ankle_y = floor - (SOLE - J['ankle_l'][1]) * S             # ankle above the sole
     hip_y = ankle_y - (J['ankle_l'][1] - J['pelvis'][1]) * S + p['drop'] * S
     Mt = T(cx, hip_y) @ R(p['tilt']) @ Sc(S) @ T(*-J['pelvis'])
     Mh = Mt @ T(*J['neck']) @ R(p['head'] - p['tilt'] * 0.6) @ T(*-J['neck'])

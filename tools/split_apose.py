@@ -1,5 +1,6 @@
 """E's rig from Chiño's "pose A" drawing (arms hanging straight, away from the body), with his original head on top.
-Usage: python3 tools/split_apose.py      -> assets/characters/e/rig/<piece>.png + rig.json
+Usage: python3 tools/split_apose.py [e|r]      -> assets/characters/<e|r>/rig/<piece>.png + rig.json
+The numbers below are E's; R_CFG at the end replaces the ones that differ for R (measured on R's pose A the same way).
 
 Sources (assets/characters/source):
   e-pose-a-x4.png   front panel of e-pose-a.png, 4x with Real-ESRGAN (x4plus), placed on the 896x1200 frame of
@@ -10,7 +11,7 @@ The face is never redrawn: head.png / blink.png / jaw.png of assets/characters/e
 
 Pieces, back to front: foot_l/r, shin_l/r, thigh_l/r, torso, arm + hand per side, head.
 Every joint is a round end (see capsule()), so a segment can turn without opening a gap."""
-import json, math, os
+import json, math, os, sys
 import numpy as np
 from PIL import Image, ImageFilter
 
@@ -18,12 +19,26 @@ from split_parts import soft, flood, harmonic, polymask, grow
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, 'assets/characters/source')
-E = os.path.join(ROOT, 'assets/characters/e')
+CHAR = sys.argv[1] if len(sys.argv) > 1 else 'e'
+E = os.path.join(ROOT, 'assets/characters', CHAR)
 OUT = os.path.join(E, 'rig')
 W, H = 896, 1200
 SCALE, DX, DY = 0.31, 142, 87          # x4 image -> 896x1200 frame (chin ~444, soles 1166, centre 452)
 HOODIE_LINE = np.array([110, 18, 22.0])
 DENIM_LINE = np.array([22, 34, 58.0])
+CROTCH_Y = 812                         # the torso ends in a V through the crotch
+SIDE_CUT = (560, 342, 562)             # below y, outside x0..x1: arms and hands, not torso
+CUT_BAND = (470, 760)                  # where the torso's cut against the sleeves gets an outline
+LEGS = (760, 280, 625)                 # legs: from y, between x0..x1 (the shoes are found on their own)
+PANTS_SEEDS = [(345, 1020), (530, 1020), (330, 1040), (545, 1040)]
+HOOD_TOP = 300
+SKIN_R, SKIN_G = 170, 105             # hand sheet: what counts as skin (R's fist has darker shading)
+HAND_JOIN = 0                          # px: bridge the creases that split a hand into islands (R's fist)
+
+
+def hood_colour(r, g, b):
+    return (r > 140) & (g < 90) & (b < 90) & (r - g > 90)
+
 
 JOINTS = {
     'neck': [458, 446], 'pelvis': [452, 790],
@@ -98,7 +113,7 @@ def capsule(rgb, alpha, core, ends, line, within=None):
 def hands(meta):
     """Each hand of the sheet without its cuff, about the size of the drawing's own hand, with its wrist point and
     direction (HAND_WRIST, measured on the sheet)."""
-    sheet = np.asarray(Image.open(os.path.join(SRC, 'e-manos-x4.png')).convert('RGB')).astype(np.float64)
+    sheet = np.asarray(Image.open(os.path.join(SRC, CHAR + '-manos-x4.png')).convert('RGB')).astype(np.float64)
     meta['hands'] = {}
     target = POSE_HAND_AREA             # skin area of the drawing's own hand: every hand gets about that size
     for side, (y0, y1) in HAND_ROWS.items():
@@ -106,12 +121,19 @@ def hands(meta):
             c = sheet[(y0 - 920) * 4 + 12:(y1 - 920) * 4 - 12, (x0 - 10) * 4 + 12:(x1 - 10) * 4 - 12]
             a = cutout(c)
             r, g, b = c[..., 0], c[..., 1], c[..., 2]
-            skin = (a > 0.5) & (r > 170) & (g > 105) & (b > 60) & (r - b > 40) & (g - b > 10)
+            skin = (a > 0.5) & (r > SKIN_R) & (g > SKIN_G) & (b > 60) & (r - b > 40) & (g - b > 10)
+            skin0 = skin
             skin = flood(skin, [tuple(np.argwhere(skin)[len(np.argwhere(skin)) // 2][::-1])]) if skin.any() else skin
             fx, fy, d = HAND_WRIST[side][name]
             wx, wy = fx * c.shape[1], fy * c.shape[0]
             k = math.sqrt(target * HAND_SIZE.get(name, 1.0) / skin.sum())
             # only the hand: the sheet's cuff goes, the hand slides into E's own cuff
+            if HAND_JOIN:                   # creases split the hand into islands: join them, fill what they enclose
+                big = flood(grow(skin0, HAND_JOIN), [tuple(np.argwhere(skin)[len(np.argwhere(skin)) // 2][::-1])])
+                sel = big & grow(skin0, 1)
+                h_, w_ = sel.shape
+                sel |= ~sel & ~flood(~sel, [(0, 0), (w_ - 1, 0), (0, h_ - 1), (w_ - 1, h_ - 1)])
+                skin = sel
             a = a * soft(grow(skin, 1), 0.6)
             img = Image.fromarray(np.dstack([c, a * 255]).astype(np.uint8), 'RGBA')
             img = img.resize((round(img.width * k), round(img.height * k)), Image.LANCZOS)
@@ -122,7 +144,7 @@ def hands(meta):
 
 
 def main():
-    big = Image.open(os.path.join(SRC, 'e-pose-a-x4.png')).convert('RGB')
+    big = Image.open(os.path.join(SRC, CHAR + '-pose-a-x4.png')).convert('RGB')
     sm = big.resize((round(big.width * SCALE), round(big.height * SCALE)), Image.LANCZOS)
     frame = Image.new('RGB', (W, H), (255, 255, 255))
     frame.paste(sm, (DX, DY))
@@ -131,7 +153,7 @@ def main():
     yy, xx = np.mgrid[0:H, 0:W]
     r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
     # the pose-A head goes; its hood stays (round, behind the original head, which covers the rest)
-    hood = (r > 140) & (g < 90) & (b < 90) & (r - g > 90) & (yy > 300)
+    hood = hood_colour(r, g, b) & (yy > HOOD_TOP)
     hood = grow(hood, 1) & (alpha > 0.1)
     alpha = alpha * np.maximum(soft(yy >= NECK_CUT, 1.0), soft(hood, 0.8))
     mx = rgb.max(axis=2)
@@ -167,23 +189,23 @@ def main():
         pieces['arm_' + side] = (rgb * (1 - k) + HOODIE_LINE * k, soft(sleeve, 0.7) * alpha)
 
     # torso: no sleeves (but a round shoulder under the arm), down to a V through the crotch
-    vline = 812 - np.abs(xx - CROTCH) * 0.30
-    keep = (yy < vline) & ~HAND_ZONE(xx, yy) & ~((yy > 560) & ((xx < 342) | (xx > 562)))
+    vline = CROTCH_Y - np.abs(xx - CROTCH) * 0.30
+    keep = (yy < vline) & ~HAND_ZONE(xx, yy) & ~((yy > SIDE_CUT[0]) & ((xx < SIDE_CUT[1]) | (xx > SIDE_CUT[2])))
     for side in ('l', 'r'):
         keep &= ~(armmask[side] & (ring('shoulder_' + side) > 34 ** 2))
     ta = alpha * soft(keep, 0.8)
-    cut = grow(~keep, 2) & keep & (alpha > 0.5) & (yy < 760) & (yy > 470)
+    cut = grow(~keep, 2) & keep & (alpha > 0.5) & (yy < CUT_BAND[1]) & (yy > CUT_BAND[0])
     k = soft(cut, 0.6)[..., None] * 0.85
     pieces['torso'] = (rgb * (1 - k) + HOODIE_LINE * k, ta)
 
     # legs
     denim = ((b > r + 8) & (mx < 170)) | ((mx < 80) & (b > r + 4))
-    pants = flood(denim & (yy >= 1000) & (yy < 1095), [(345, 1020), (530, 1020), (330, 1040), (545, 1040)])
+    pants = flood(denim & (yy >= 1000) & (yy < 1095), PANTS_SEEDS)
     pants |= (yy < 1000)
     for side in ('l', 'r'):
         sel = (xx < CROTCH) if side == 'l' else (xx >= CROTCH)
-        leg = sel & (alpha > 0.5) & (yy >= 760) & ~HAND_ZONE(xx, yy) & ~grow(armmask['l'] | armmask['r'], 3)
-        leg &= (xx > 280) & (xx < 625)
+        leg = sel & (alpha > 0.5) & (yy >= LEGS[0]) & ~HAND_ZONE(xx, yy) & ~grow(armmask['l'] | armmask['r'], 3)
+        leg &= (xx > LEGS[1]) & (xx < LEGS[2])
         t = along('hip_' + side, 'knee_' + side)
         s2 = along('knee_' + side, 'ankle_' + side)
         thigh = leg & (t < 1) & pants
@@ -251,6 +273,37 @@ def HAND_ZONE(xx, yy):
     for x0, y0, x1, y1 in HAND_BOX.values():
         z |= (xx >= x0) & (xx < x1) & (yy >= y0) & (yy < y1)
     return z
+
+
+# R: blue hoodie, his pose A placed so its chin and soles meet the original drawing's (chin ~415, soles 1167)
+R_CFG = dict(
+    SCALE=0.30125, DX=138, DY=111,
+    HOODIE_LINE=np.array([14, 48, 120.0]),
+    JOINTS={
+        'neck': [460, 414], 'pelvis': [444, 765],
+        'shoulder_l': [336, 500], 'elbow_l': [306, 608], 'wrist_l': [268, 716],
+        'shoulder_r': [557, 500], 'elbow_r': [584, 608], 'wrist_r': [622, 716],
+        'hip_l': [394, 765], 'knee_l': [364, 930], 'ankle_l': [338, 1065],
+        'hip_r': [494, 765], 'knee_r': [515, 930], 'ankle_r': [535, 1065],
+    },
+    ARM={
+        'l': [(345, 445), (330, 470), (318, 500), (305, 530), (292, 560), (280, 590), (264, 620), (250, 650),
+              (240, 680), (238, 705), (250, 718), (285, 718), (298, 712), (315, 695), (322, 675), (338, 650),
+              (347, 620), (351, 585), (354, 540), (356, 490)],
+        'r': [(550, 445), (562, 470), (575, 500), (586, 530), (598, 560), (610, 590), (624, 620), (636, 650),
+              (645, 680), (648, 705), (636, 718), (600, 718), (590, 712), (573, 695), (566, 675), (551, 650),
+              (542, 620), (539, 585), (538, 540), (537, 490)],
+    },
+    HAND_BOX={'l': (200, 708, 290, 840), 'r': (598, 708, 685, 840)},
+    CROTCH=442, CROTCH_Y=787, SIDE_CUT=(575, 350, 540), CUT_BAND=(460, 740), LEGS=(740, 235, 650),
+    SKIN_R=165, SKIN_G=55, HAND_JOIN=4,
+    PANTS_SEEDS=[(340, 1020), (535, 1020), (330, 1040), (540, 1040)], HOOD_TOP=280, NECK_CUT=408,
+    JAW=[(260, 386), (345, 386), (360, 379), (380, 398), (410, 414), (450, 421), (490, 415), (520, 401), (548, 383),
+         (565, 381), (650, 381)],
+    hood_colour=lambda r, g, b: (b > 140) & (r < 90) & (b - r > 90),
+)
+if CHAR == 'r':
+    globals().update(R_CFG)
 
 
 if __name__ == '__main__':
