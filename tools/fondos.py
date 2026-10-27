@@ -449,6 +449,63 @@ def elegir(g):
     return best if score[best] > 0 else 'fiesta'
 
 
+# ---------------------------------------------------------------- every video a different set
+def turno(eid, theme):
+    """How many earlier scripts (by id) share this theme: the first one gets the theme as it is, each later one a
+    variant of its own, so no two videos have the same set."""
+    if not eid:
+        return 0
+    import json
+    lang = eid.split('/')[0] if '/' in eid else 'es'
+    d = os.path.join(ROOT, 'content/guiones', lang)
+    n = 0
+    for f in sorted(os.listdir(d)) if os.path.isdir(d) else []:
+        if not f.endswith('.json') or f[:-5] >= eid:
+            continue
+        try:
+            if elegir(json.load(open(os.path.join(d, f)))) == theme:
+                n += 1
+        except (ValueError, KeyError):
+            pass
+    return n
+
+
+def _hue(c, deg, sat=1.0):
+    import colorsys
+    h, l, s_ = colorsys.rgb_to_hls(*(v / 255 for v in c))
+    h = ((h + deg / 360) % 1) * 360
+    for lo, hi in ((340, 380), (205, 240)):         # never the red of E's hoodie nor the blue of R's
+        for off in (0, -360):
+            if lo + off < h < hi + off:
+                h = lo + off if h - lo - off < (hi - lo) / 2 else hi + off
+    r, g, b = colorsys.hls_to_rgb((h / 360) % 1, l, min(1, s_ * sat))
+    return int(r * 255), int(g * 255), int(b * 255)
+
+
+def variante(theme, n, eid=''):
+    """The theme's n-th variant: the wall turns to another hue, the accents swap places, and the wallpaper, the
+    window, the pictures and the shelf take other motifs of the same theme."""
+    th = dict(TEMAS[theme])
+    if n == 0:
+        return th
+    import zlib
+    rng = np.random.default_rng(zlib.crc32(eid.encode()) + n)
+    shift = [0, 28, -28, 52, -52, 80, -80][n % 7] + rng.uniform(-8, 8)
+    th['pared'] = tuple(_hue(c, shift, .8) for c in th['pared'])
+    th['sofa'] = _hue(th.get('sofa', th['acentos'][-1]), -shift * 0.7)
+    a = th['acentos']
+    th['acentos'] = a[n % len(a):] + a[:n % len(a)]
+    pool = list(dict.fromkeys(th['flotan'] + th['cuadros'] + th['estante'] + [th['papel']]))
+    th['papel'] = pool[n % len(pool)]
+    order = list(rng.permutation(pool))
+    th['cuadros'] = order[:2]
+    th['estante'] = order[2:5] if len(order) >= 5 else th['estante']
+    th['flotan'] = list(rng.permutation(th['flotan']))
+    th['ventana'] = ['ciudad', 'cielo', 'torre' if th.get('reloj') else 'ciudad'][n % 3] if theme != 'tiempo' else \
+        ['torre', 'cielo', 'ciudad'][n % 3]
+    return th
+
+
 # ---------------------------------------------------------------- the set
 def paste(img, sp, x, y, rot=0):
     """Paste a sprite centred on world point (x, y), its size already in set pixels."""
@@ -706,9 +763,9 @@ def exterior(img, d, th, w, h, rng, place):
         paste(img, sprite('globo', 110 * K, th['acentos'], i=k_), x, y)
 
 
-def make_set(theme, place='salon', seed=7):
+def make_set(theme, place='salon', seed=7, th=None):
     """The whole background of a theme in a place, in world coordinates at K times the size."""
-    th = TEMAS[theme]
+    th = th or TEMAS[theme]
     rng = np.random.default_rng(seed)
     w, h = (W + 2 * MARGIN) * K, (H + 2 * MARGIN) * K
     img = Image.new('RGBA', (w, h))
@@ -754,8 +811,10 @@ class Fondo:
         g = g or {}
         self.theme = theme or elegir(g)
         self.place = place or g.get('escenario', 'salon')
-        self.th = TEMAS[self.theme]
-        self.set = make_set(self.theme, self.place, seed)
+        self.n = turno(g.get('id'), self.theme)
+        self.th = variante(self.theme, self.n, g.get('id', ''))
+        seed = seed + 101 * self.n
+        self.set = make_set(self.theme, self.place, seed, self.th)
         rng = np.random.default_rng(seed + 1)
         # motifs drifting in the air, above the heads and at the sides (never over the faces)
         spots = [(130, 330), (300, 450), (240, 290), (420, 250), (880, 300), (1030, 650), (-20, 760), (1040, 1120),

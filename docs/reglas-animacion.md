@@ -51,4 +51,6 @@ Lo que Chiño ha pedido o corregido, para que todos los vídeos salgan igual. El
   `escenario` (salon, cocina, dormitorio, cole, calle, parque).
 - Lo que se mueve (motivos flotando, destellos, agujas de reloj) va por encima de la cabeza o a los lados, nunca
   sobre las caras, y hay una luz suave detrás de los niños para que destaquen. Todo dibujado por código: gratis.
+- Ningún vídeo repite fondo: el primer guion de cada tema lleva el tema tal cual y cada uno de los siguientes una
+  variante propia (otro tono de pared, nunca rojo ni azul como las sudaderas, y otros motivos, ventana y cuadros).
 - `FONDO=liso` vuelve a la pared lisa de antes; `FONDO=<tema>` fuerza un tema.
