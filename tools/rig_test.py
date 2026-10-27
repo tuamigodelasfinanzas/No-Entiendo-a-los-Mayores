@@ -90,7 +90,7 @@ def arm(side, Mt, S, tilt, up_out, fore_out, hand, hand_rot=0.0):
     th_u = math.radians(90 + sgn * up_out) + tilt
     th_f = math.radians(90 + sgn * fore_out) + tilt
     S0, E0 = J['shoulder_' + side], J['elbow_' + side]
-    Sw = ap(Mt, S0)
+    Sw = ap(Mt, S0) - np.array([0, SHOULDER_RISE * S * min(max((up_out - 60) / 90, 0), 1)])
     if ONE_PIECE:
         Ma = T(*Sw) @ R(th_u - math.radians(REST['arm_' + side])) @ Sc(S) @ T(*-S0)
         Ww = ap(Ma, J['wrist_' + side]) - 6 * S * np.array([math.cos(th_u), math.sin(th_u)])
@@ -203,7 +203,8 @@ def leg(side, Mt, A, S, lift):
 
 # arm poses: side -> (upper arm out, forearm out, hand, hand turn); None = hands in the pockets (the drawing as is)
 SHOULDER_FOLLOW = 0.35      # how much the sleeve leaves the shoulder still pointing down (round shoulder)
-FOREARM_LAG = 0.08          # s
+ELBOW_FOLD = 45             # degrees the elbow bends half way through a big arm move
+SHOULDER_RISE = 9           # px the shoulder goes up with the arm raised high
 SHOULDER_FADE = (-6, 34)    # sleeve rows (from the shoulder joint) over which it fades into the torso
 DOWN = {'l': (12, 8, REST_HAND, 0), 'r': (12, 8, REST_HAND, 0)}
 ARM_KEYS = [  # (time, pose); between keys the angles ease, the hand changes half way
@@ -226,15 +227,20 @@ ARM_KEYS = [  # (time, pose); between keys the angles ease, the hand changes hal
 def arms_at(t):
     for (t0, a), (t1, b) in zip(ARM_KEYS, ARM_KEYS[1:]):
         if t0 <= t <= t1:
-            k = ease((t - t0) / (t1 - t0)) if t1 > t0 else 1
+            x = (t - t0) / (t1 - t0) if t1 > t0 else 1
+            k = ease(x)
+            ku, kf = ease((x - 0.12) / 0.88), ease(x / 0.88)     # the forearm leads, the upper arm follows
             out = {}
             for side in ('l', 'r'):
                 pa, pb = a[side], b[side]
-                # the hand changes early when it leaves a gesture and late when it goes into one, so a pointing hand
-                # doesn't point at the floor on its way down
-                swap = 0.25 if pb[2] == REST_HAND else 0.6
-                out[side] = (pa[0] + (pb[0] - pa[0]) * k, pa[1] + (pb[1] - pa[1]) * k, pa[2] if k < swap else pb[2],
-                             pa[3] + (pb[3] - pa[3]) * k)
+                # the hand changes early, so a pointing hand doesn't point at the floor on its way down and a hanging
+                # hand doesn't dangle from a raised arm
+                swap = 0.25 if pb[2] == REST_HAND else 0.3
+                # on the way the elbow folds (the hand comes up close to the body, as a person lifts an arm) and
+                # opens again at the end, instead of the arm swinging up straight like a stick
+                fold = ELBOW_FOLD * min(abs(pb[0] - pa[0]) / 90, 1) * math.sin(math.pi * k)
+                out[side] = (pa[0] + (pb[0] - pa[0]) * ku, pa[1] + (pb[1] - pa[1]) * kf + fold,
+                             pa[2] if k < swap else pb[2], pa[3] + (pb[3] - pa[3]) * k)
             return out
     return ARM_KEYS[-1][1]
 
@@ -244,10 +250,8 @@ def pose(t):
     p = {'tilt': 0.0, 'head': 0.0, 'lift': [0.0, 0.0], 'air': [0.0, 0.0], 'drop': 0.0, 'dx': 0.0, 'blink': False,
          'spread': 0.0}
     p['arms'] = {k: list(v) for k, v in arms_at(t).items()}
-    late = arms_at(max(t - FOREARM_LAG, 0))          # the forearm and the hand trail the upper arm a little
-    for sd in ('l', 'r'):
-        p['arms'][sd][1] = late[sd][1]
-        p['arms'][sd][2] = late[sd][2]
+    for sd in ('l', 'r'):                            # the elbow never bends backwards
+        p['arms'][sd][1] = max(p['arms'][sd][1], p['arms'][sd][0] - 6)
     # walk towards the camera: 0 .. 3.4 s, steps of 0.5 s; the arms swing a little
     walk_end = 3.4
     k = ease(min(t / walk_end, 1))
