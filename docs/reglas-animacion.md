@@ -43,3 +43,12 @@ Lo que Chiño ha pedido o corregido, para que todos los vídeos salgan igual. El
 - Para revisar un cambio, basta con una escena corta (`TRAMO=3,7.2 python3 tools/presentacion.py out.mp4`) y una
   imagen de detalle. El vídeo completo se renderiza cuando Chiño da el visto bueno.
 - No se publica nada hasta que Chiño diga "publica".
+
+## Fondos
+- Cada vídeo tiene su propio fondo, colorido y con vida, a juego con el tema (`tools/fondos.py`). El tema sale solo
+  del guion (tema, título, hashtags e iconos de las tarjetas); un guion puede fijarlo con `"fondo": "<tema>"`
+  (casa, dinero, tiempo, tecnologia, trabajo, comida, deporte, viaje, coche, amigos, fiesta). El sitio sale de
+  `escenario` (salon, cocina, dormitorio, cole, calle, parque).
+- Lo que se mueve (motivos flotando, destellos, agujas de reloj) va por encima de la cabeza o a los lados, nunca
+  sobre las caras, y hay una luz suave detrás de los niños para que destaquen. Todo dibujado por código: gratis.
+- `FONDO=liso` vuelve a la pared lisa de antes; `FONDO=<tema>` fuerza un tema.
