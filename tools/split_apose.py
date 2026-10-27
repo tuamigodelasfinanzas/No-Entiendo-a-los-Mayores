@@ -42,6 +42,9 @@ ARM = {
 HAND_BOX = {'l': (205, 725, 285, 845), 'r': (620, 725, 700, 845)}
 CROTCH = 452
 ELBOW_R = 44                           # half the sleeve's width at the elbow
+# the original face's jaw line (outline included), measured on e-full.jpg
+JAW = [(300, 380), (330, 382), (350, 405), (380, 435), (410, 450), (458, 462), (510, 450), (545, 430), (565, 405),
+       (590, 382), (620, 380)]
 NECK_CUT = 440                         # the pose-A head goes, the original one goes on top
 
 # hand sheet: cells in e-pose-a.png coordinates (the x4 sheet starts at (10, 920))
@@ -126,8 +129,11 @@ def main():
     rgb = np.asarray(frame).astype(np.float64)
     alpha = cutout(rgb)
     yy, xx = np.mgrid[0:H, 0:W]
-    alpha = alpha * soft(yy >= NECK_CUT, 1.0)
     r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
+    # the pose-A head goes; its hood stays (round, behind the original head, which covers the rest)
+    hood = (r > 140) & (g < 90) & (b < 90) & (r - g > 90) & (yy > 300)
+    hood = grow(hood, 1) & (alpha > 0.1)
+    alpha = alpha * np.maximum(soft(yy >= NECK_CUT, 1.0), soft(hood, 0.8))
     mx = rgb.max(axis=2)
     J = {k: np.array(v, float) for k, v in JOINTS.items()}
     os.makedirs(OUT, exist_ok=True)
@@ -219,7 +225,18 @@ def main():
         ex, ey = JOINTS['elbow_' + side]
         meta['hands']['pose_' + side] = {'wrist': [wx - p['x'], wy - p['y']], 'dir': math.degrees(math.atan2(wy - ey, wx - ex))}
         meta['pieces']['hand_pose_' + side] = {'x': 0, 'y': 0}
-    for name in ('head', 'blink', 'jaw'):
+    # the head: the original drawing down to its own jaw line (outline included). head.png of the first rig stops
+    # at y 442, where the hood covered it, and the pose-A hood does not, so the chin would look cut
+    full = Image.alpha_composite(Image.open(os.path.join(E, 'body.png')), Image.open(os.path.join(E, 'head.png')))
+    jaw = np.interp(xx, [x for x, _ in JAW], [y for _, y in JAW])
+    fa = np.asarray(full)[..., 3] / 255.0 * soft(yy < jaw, 0.8)
+    hd = np.asarray(full).copy()
+    hd[..., 3] = (fa * 255).astype(np.uint8)
+    hd[hd[..., 3] == 0] = 0
+    x0, y0, x1, y1 = Image.fromarray(hd).getbbox()
+    Image.fromarray(hd[y0:y1, x0:x1]).save(os.path.join(OUT, 'head.png'), optimize=True)
+    meta['pieces']['head'] = {'x': x0, 'y': y0}
+    for name in ('blink', 'jaw'):
         im = Image.open(os.path.join(E, name + '.png'))
         x0, y0, x1, y1 = im.getbbox()
         im.crop((x0, y0, x1, y1)).save(os.path.join(OUT, name + '.png'), optimize=True)
