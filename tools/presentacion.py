@@ -146,6 +146,30 @@ def _bilinear(img, r, c):
     return out
 
 
+def over_opening(frame, hand_layer, sl, m, side):
+    """The hand comes out of the sleeve: over the dark opening at the end of the cuff the hand (and its wrist) is
+    drawn in front, so it covers the hole as if it came out of it; the cuff's ribbing stays in front of it."""
+    if sl is None:
+        return
+    px, v, x0, y0 = sl
+    g = m.SLEEVES[side]
+    al = px[..., 3]
+    rgb_max = (px[..., :3] / np.maximum(al[..., None], 1) * 255).max(2)
+    ref = OPENING_REF.setdefault(id(m), float(np.percentile(m.STRIP[side][..., :3].max(2)[m.STRIP[side][..., 3] > 200], 75)))
+    end = g['upper'] + g['fore']
+    # the opening: dark rows past the ribbing, and the soft edge where the sleeve ends (its rim line)
+    hole = (v > end + 4) & (al > 0) & ((rgb_max < 0.82 * ref) | (al < 250))
+    if not hole.any():
+        return
+    soft = np.asarray(Image.fromarray((hole * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(0.6)), float) / 255
+    tile = np.asarray(hand_layer.crop((x0, y0, x0 + px.shape[1], y0 + px.shape[0]))).astype(float)
+    tile[..., 3] *= soft
+    frame.alpha_composite(Image.fromarray(tile.astype(np.uint8), 'RGBA'), (int(x0), int(y0)))
+
+
+OPENING_REF = {}
+
+
 def paste_sleeve(frame, sl, fade=None, mask=None):
     if sl is None:
         return
@@ -329,9 +353,12 @@ def kid(img, c, x, floor, S, p):
         WRISTS.append(Ph)
     for side, (hand, Mhd, sl, where) in arms.items():
         if where != 'front':
-            wrist_join(img, *joins[side], S)
-            m.draw(img, f'hand_{hand.rstrip("~")}_{side}', Mhd)
+            hl = Image.new('RGBA', (W, H))
+            wrist_join(hl, *joins[side], S)
+            m.draw(hl, f'hand_{hand.rstrip("~")}_{side}', Mhd)
+            img.alpha_composite(hl)
             paste_sleeve(img, sl)
+            over_opening(img, hl, sl, m, side)
     torso = Image.new('RGBA', (W, H))
     m.draw(torso, 'torso', Mt)
     img.alpha_composite(torso)
