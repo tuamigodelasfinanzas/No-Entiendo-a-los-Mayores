@@ -26,6 +26,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
-          git add content/especiales/presentacion/voces
+          git add content/especiales/presentacion/voces content/especiales/presentacion/voces-pruebas
           git diff --cached --quiet || git commit -m "Presentación: voces generadas"
           git push
