@@ -200,7 +200,7 @@ def settle(a, b, s):
 
 
 # ---------------------------------------------------------------- one kid
-HAND_OUT = {}                                   # hand -> px of the drawing it comes further out of the sleeve
+SINK = 7                                        # px of the drawing the wrist goes inside the cuff
 WRISTS = []                                     # where the hands went (for checking the joins)
 WRIST_INFO = {}
 
@@ -236,7 +236,8 @@ def wrist_info(m, c, hand, side):
     half = float(np.clip(0.42 * max(widths or [44]), 15, 24))
     # where the hand is really full (its cut edge is above this): the join must reach it before fading
     full = next((d for d, w_ in zip(depths, widths) if w_ >= 0.8 * max(widths)), 10)
-    WRIST_INFO[key] = (skin, edge, half, full)
+    first = next((d for d, w_ in zip(depths, widths) if w_ >= 0.55 * max(widths)), 0)   # where the wrist is solid
+    WRIST_INFO[key] = (skin, edge, half, full, first)
     return WRIST_INFO[key]
 
 
@@ -244,7 +245,7 @@ def wrist_join(img, Ww, Ph, ah, info, S):
     """Skin between the cuff and the hand, the colour of the hand, so the hand never looks detached: a tapered piece
     from inside the sleeve (Ww) to just inside the hand. It goes UNDER the hand and the sleeve, so it only shows in
     the gap between them and never paints over the hand (Chiño)."""
-    skin, edge, half, full = info
+    skin, edge, half, full, first = info
     into = (max(full, 0) + 10) * S
     B = Ph + ah * into
     d = B - Ww
@@ -310,9 +311,11 @@ def kid(img, c, x, floor, S, p):
         up, fore, hand, rot, where = (list(p['arms'][side]) + [None])[:5]
         Mu, Mf, Mhd = m.arm(side, Mt, S, tilt, up, fore, hand, rot)
         th_f = math.radians(90 + (1 if side == 'l' else -1) * fore) + tilt
-        out = HAND_OUT.get(hand.rstrip('~'), 0)
-        if out:                                 # this hand sits further out of the cuff (its palm was swallowed)
-            Mhd = T(*(np.array([math.cos(th_f), math.sin(th_f)]) * out * S)) @ Mhd
+        # the hand goes into the cuff: its solid wrist starts SINK px inside the sleeve's opening, so it comes out of
+        # the sleeve instead of floating under it (the rig puts the wrist point 14 px inside the opening)
+        first = wrist_info(m, c, hand, side)[4]
+        out = min(14 - SINK - first, 0)
+        Mhd = T(*(np.array([math.cos(th_f), math.sin(th_f)]) * out * S)) @ Mhd
         Sw, Ew, Ww = ap(Mu, J['shoulder_' + side]), ap(Mu, J['elbow_' + side]), ap(Mf, J['wrist_' + side])
         sgn = 1 if side == 'l' else -1
         th_u = math.radians(90 + sgn * up) + tilt
