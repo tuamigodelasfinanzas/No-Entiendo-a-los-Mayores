@@ -131,9 +131,13 @@ def hands(meta):
             cuff = hood_colour(r, g, b) & (a > 0.5)
             # only the cuff itself: thin red lines in the skin (E's outlines) go
             cuff = np.asarray(Image.fromarray((cuff * 255).astype(np.uint8)).filter(ImageFilter.MinFilter(9))) > 0
-            contact = skin & grow(cuff, 4)
+            contact = skin & grow(cuff, 12)
             if contact.sum() > 30 and cuff.sum() > 200:
                 wy, wx = np.argwhere(contact).mean(0)
+            if name == 'senala':            # pointing: the index finger carries on the forearm's line
+                pts = np.argwhere(skin)
+                ty, tx = pts[((pts - [wy, wx]) ** 2).sum(1).argmax()]
+                d = math.degrees(math.atan2(ty - wy, tx - wx))
             k = math.sqrt(target * HAND_SIZE.get(name, 1.0) / skin.sum())
             # only the hand: the sheet's cuff goes, the hand slides into E's own cuff
             if HAND_JOIN:                   # creases split the hand into islands: join them, fill what they enclose
