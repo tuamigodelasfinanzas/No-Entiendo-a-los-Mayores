@@ -102,8 +102,11 @@ def arm(side, Mt, S, tilt, up_out, fore_out, hand, hand_rot=0.0):
     Mf = T(*Ew) @ R(th_f - math.radians(REST['fore_' + side])) @ Sc(S) @ T(*-E0)
     into = (SLEEVES['l']['cuff'] - 8) if SLEEVES else -9    # the hand's wrist: a little inside the cuff's opening
     Ww = ap(Mf, J['wrist_' + side]) + into * S * np.array([math.cos(th_f), math.sin(th_f)])
-    h = HANDS[f'{hand}_{side}']
-    Mh = T(*Ww) @ R(th_f - math.radians(h['dir']) + sgn * math.radians(hand_rot)) @ Sc(S) @ T(*[-v for v in h['wrist']])
+    h = HANDS[f'{hand.rstrip("~")}_{side}']
+    Mh = T(*Ww) @ R(th_f - math.radians(h['dir']) + sgn * math.radians(hand_rot)) @ Sc(S)
+    if hand.endswith('~'):                      # the same hand turned over: mirrored across its own axis
+        Mh = Mh @ mirror(h['dir'])
+    Mh = Mh @ T(*[-v for v in h['wrist']])
     return Mu, Mf, Mh
 
 
@@ -172,6 +175,12 @@ def draw_sleeve(frame, side, Sw, Ew, Ww, t_sh, S, fade=None, mask=None):
     frame.alpha_composite(tile, (int(x0), int(y0)))
 
 
+def mirror(deg):
+    """Reflection across the line through the origin at deg (the hand's wrist -> fingers axis)."""
+    a = 2 * math.radians(deg)
+    return np.array([[math.cos(a), math.sin(a), 0], [math.sin(a), -math.cos(a), 0], [0, 0, 1.0]])
+
+
 def leg(side, Mt, A, S, lift):
     """Thigh, shin and foot matrices: hip from the torso matrix Mt, ankle at A (frame coords).
     lift 0..1: how much the leg comes towards the camera (shortens on screen instead of bending sideways)."""
@@ -201,7 +210,9 @@ def leg(side, Mt, A, S, lift):
     return Mth, Msh, Mft, Hp, K
 
 
-# arm poses: side -> (upper arm out, forearm out, hand, hand turn); None = hands in the pockets (the drawing as is)
+# arm poses: side -> (upper arm out, forearm out, hand, hand turn); None = hands in the pockets (the drawing as is).
+# A hand ending in ~ is turned over (mirrored across its axis): the sheet's open hands have the thumb on the outside,
+# a palm shown to the camera has it inside (up, with the arm out); pointing sideways, the thumb goes on top
 SHOULDER_FOLLOW = 0.35      # how much the sleeve leaves the shoulder still pointing down (round shoulder)
 ELBOW_FOLD = 45             # degrees the elbow bends half way through a big arm move
 SHOULDER_RISE = 9           # px the shoulder goes up with the arm raised high
@@ -209,14 +220,14 @@ SHOULDER_FADE = (-6, 34)    # sleeve rows (from the shoulder joint) over which i
 DOWN = {'l': (12, 8, REST_HAND, 0), 'r': (12, 8, REST_HAND, 0)}
 ARM_KEYS = [  # (time, pose); between keys the angles ease, the hand changes half way
     (0.0, DOWN), (3.4, DOWN),
-    (3.9, {'l': (6, 4, REST_HAND, 0), 'r': (132, 150, 'abierta', 0)}),          # waves: arm up and out, elbow a little bent, hand clear of the head
-    (5.3, {'l': (6, 4, REST_HAND, 0), 'r': (132, 150, 'abierta', 0)}),
-    (5.8, {'l': (84, 88, 'senala', 0), 'r': (6, 4, REST_HAND, 0)}),             # points away
-    (7.0, {'l': (84, 88, 'senala', 0), 'r': (6, 4, REST_HAND, 0)}),
+    (3.9, {'l': (6, 4, REST_HAND, 0), 'r': (132, 150, 'abierta~', 0)}),          # waves: arm up and out, elbow a little bent, hand clear of the head
+    (5.3, {'l': (6, 4, REST_HAND, 0), 'r': (132, 150, 'abierta~', 0)}),
+    (5.8, {'l': (84, 88, 'senala~', 0), 'r': (6, 4, REST_HAND, 0)}),             # points away
+    (7.0, {'l': (84, 88, 'senala~', 0), 'r': (6, 4, REST_HAND, 0)}),
     (7.5, {'l': (6, 4, REST_HAND, 0), 'r': (160, 160, 'senala', 0)}),            # points up: an idea
     (8.7, {'l': (6, 4, REST_HAND, 0), 'r': (160, 160, 'senala', 0)}),
-    (9.1, {'l': (40, 80, 'abierta', 35), 'r': (40, 80, 'abierta', 35)}),         # shrug: palms out, fingers up
-    (10.1, {'l': (40, 80, 'abierta', 35), 'r': (40, 80, 'abierta', 35)}),
+    (9.1, {'l': (40, 80, 'abierta~', 35), 'r': (40, 80, 'abierta~', 35)}),         # shrug: palms out, fingers up
+    (10.1, {'l': (40, 80, 'abierta~', 35), 'r': (40, 80, 'abierta~', 35)}),
     (10.5, {'l': (14, 30, 'puno', 0), 'r': (14, 30, 'puno', 0)}),                # gets ready to jump
     (10.9, {'l': (150, 168, 'puno', 0), 'r': (150, 168, 'puno', 0)}),            # celebrates in the air
     (11.6, {'l': (150, 168, 'puno', 0), 'r': (150, 168, 'puno', 0)}),
@@ -362,7 +373,7 @@ def frame_at(t, debug=False):
         for side in ('l', 'r'):
             up, fore, hand, rot = p['arms'][side]
             Mu, Mf, Mhd = arm(side, Mt, S, p['tilt'], up, fore, hand, rot)
-            draw(img, f'hand_{hand}_{side}', Mhd)
+            draw(img, f'hand_{hand.rstrip("~")}_{side}', Mhd)
             if SLEEVES:
                 Sw, Ew = ap(Mu, J['shoulder_' + side]), ap(Mu, J['elbow_' + side])
                 Ww = ap(Mf, J['wrist_' + side])
@@ -386,7 +397,7 @@ def frame_at(t, debug=False):
         for side in ('l', 'r'):
             up, fore, hand, rot = p['arms'][side]
             Mu, Mf, Mhd = arm(side, Mt, S, p['tilt'], up, fore, hand, rot)
-            draw(img, f'hand_{hand}_{side}', Mhd)
+            draw(img, f'hand_{hand.rstrip("~")}_{side}', Mhd)
             if ONE_PIECE:
                 draw(img, 'arm_' + side, Mu)
                 continue
