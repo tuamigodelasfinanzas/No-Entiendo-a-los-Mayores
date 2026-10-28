@@ -18,5 +18,10 @@
     "date": "2026-10-28",
     "slot": "A",
     "media": "2026-10-28-A-003-reuniones"
+  },
+  "004-bruto-y-neto": {
+    "date": "2026-10-28",
+    "slot": "B",
+    "media": "2026-10-28-B-004-bruto-y-neto"
   }
 }
