@@ -28,5 +28,10 @@
     "date": "2026-10-29",
     "slot": "A",
     "media": "2026-10-29-A-006-tenemos-que-quedar"
+  },
+  "005-inflacion": {
+    "date": "2026-10-29",
+    "slot": "B",
+    "media": "2026-10-29-B-005-inflacion"
   }
 }
