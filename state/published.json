@@ -33,5 +33,10 @@
     "date": "2026-10-29",
     "slot": "B",
     "media": "2026-10-29-B-005-inflacion"
+  },
+  "007-gimnasio": {
+    "date": "2026-10-30",
+    "slot": "A",
+    "media": "2026-10-30-A-007-gimnasio"
   }
 }
