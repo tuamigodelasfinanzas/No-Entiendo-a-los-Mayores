@@ -38,5 +38,10 @@
     "date": "2026-10-30",
     "slot": "A",
     "media": "2026-10-30-A-007-gimnasio"
+  },
+  "008-cookies": {
+    "date": "2026-10-30",
+    "slot": "B",
+    "media": "2026-10-30-B-008-cookies"
   }
 }
