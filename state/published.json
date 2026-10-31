@@ -43,5 +43,10 @@
     "date": "2026-10-30",
     "slot": "B",
     "media": "2026-10-30-B-008-cookies"
+  },
+  "009-los-lunes": {
+    "date": "2026-10-31",
+    "slot": "A",
+    "media": "2026-10-31-A-009-los-lunes"
   }
 }
